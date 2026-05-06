@@ -37,9 +37,16 @@ module module_cu_c3
 
    !use module_mp_wsm3, only: WSM3_GF
 
-   !--- for MONAN only
-   !use mpas_kind_types,only: RKIND
-   use machine, only: kind_phys
+#ifdef MPAS
+   use mpas_kind_types, only: kind_c3     => RKIND
+   use mpas_kind_types, only: kind_c3_dbl => R8KIND
+#elif defined(CCPP)
+   use machine,         only: kind_c3     => kind_phys
+   use machine,         only: kind_c3_dbl => kind_dbl_prec
+#else
+   use iso_fortran_env, only: kind_c3     => real32
+   use iso_fortran_env, only: kind_c3_dbl => real64
+#endif
    
    implicit none
 
@@ -104,7 +111,7 @@ module module_cu_c3
    integer, dimension(maxiens) :: closure_choice  != (/10,  10,  3/) ! deep, shallow, congestus
 
    !-- gross entrainment rate: deep, shallow, congestus
-   real,    dimension(maxiens) :: cum_entr_rate != (/&
+   real(kind=kind_c3),    dimension(maxiens) :: cum_entr_rate != (/&
                                                 ! 6.3e-4  & !deep
                                                 !,1.0e-3  & !shallow
                                                 !,5.0e-4  & !mid
@@ -167,31 +174,31 @@ module module_cu_c3
    integer :: apply_sub_mp      != 0/1: subsidence transport applied the to grid-scale/anvil ice/liq mix
                                 !=  ratio and cloud fraction
 
-   real    :: alp1              != 0/0.5/1: apply subsidence transport of ls/anvil cloud fraction using
+   real(kind=kind_c3)    :: alp1              != 0/0.5/1: apply subsidence transport of ls/anvil cloud fraction using
                                 !=      time implicit discretization
 
    integer :: use_wetbulb       != 0/1
 
-   real    :: overshoot         != 0, 1
+   real(kind=kind_c3)    :: overshoot         != 0, 1
 
-   real    :: dcape_threshold   != CAPE time rate threshold for ADV_TRIGGER (J kg^-1 hr^-1)
+   real(kind=kind_c3)    :: dcape_threshold   != CAPE time rate threshold for ADV_TRIGGER (J kg^-1 hr^-1)
    
    integer :: autoconv          != 1, 3 or 4 autoconversion formulation: (1) kessler,
                                 !  (3) kessler with temp dependence, (4) sundvisqt
-   real    ::  c0_deep          != default= 3.e-3   conversion rate (cloud to rain, m-1) - for deep      plume
-   real    ::  c0_mid           != default= 2.e-3   conversion rate (cloud to rain, m-1) - for congestus plume
-   real    ::  c0_shal          != default= 0.e-3   conversion rate (cloud to rain, m-1) - for shallow   plume
-   real    ::  qrc_crit         != default= 2.e-4   kg/kg
+   real(kind=kind_c3)    ::  c0_deep          != default= 3.e-3   conversion rate (cloud to rain, m-1) - for deep      plume
+   real(kind=kind_c3)    ::  c0_mid           != default= 2.e-3   conversion rate (cloud to rain, m-1) - for congestus plume
+   real(kind=kind_c3)    ::  c0_shal          != default= 0.e-3   conversion rate (cloud to rain, m-1) - for shallow   plume
+   real(kind=kind_c3)    ::  qrc_crit         != default= 2.e-4   kg/kg
 
    integer :: use_momentum_transp != 0/1:  turn on/off conv transp of momentum
-   real    ::  lambau_deep        != default= 2.0 lambda parameter for deep/congestus convection momentum transp
-   real    ::  lambau_shdn        != default= 2.0 lambda parameter for shallow/downdraft convection momentum transp
+   real(kind=kind_c3)    ::  lambau_deep        != default= 2.0 lambda parameter for deep/congestus convection momentum transp
+   real(kind=kind_c3)    ::  lambau_shdn        != default= 2.0 lambda parameter for shallow/downdraft convection momentum transp
 
    integer :: downdraft           != 0/1:  turn on/off downdrafts, default = 1
-   real    ::  tau_deep            != deep      convective timescale
-   real    ::  tau_mid             != congestus convective timescale
+   real(kind=kind_c3)    ::  tau_deep            != deep      convective timescale
+   real(kind=kind_c3)    ::  tau_mid             != congestus convective timescale
 
-   real    :: max_tq_tend          != max t,q tendency allowed (100 k/day)
+   real(kind=kind_c3)    :: max_tq_tend          != max t,q tendency allowed (100 k/day)
 
    integer :: use_smooth_prof      != 1 makes the normalized mass flux, entr and detrainment profiles smoother
 
@@ -201,16 +208,16 @@ module module_cu_c3
                                                        ! > 0 => produces smoother tendencies 
                                                        !    (e.g.: for 1 => makes average between k-1,k,k+1) 
    integer,dimension(maxiens) :: cum_use_excess    != use t,q excess sub-grid scale variability
-   real,   dimension(maxiens) :: cum_hei_down_land != [0.2,0.8] height of the max z downdraft , default = 0.50
-   real,   dimension(maxiens) :: cum_hei_down_ocean!= [0.2,0.8] height of the max z downdraft , default = 0.50
-   real,   dimension(maxiens) :: cum_hei_updf_land != [0.2,0.8] height of the max z updraft   , default = 0.35
-   real,   dimension(maxiens) :: cum_hei_updf_ocean!= [0.2,0.8] height of the max z updraft   , default = 0.35
-   real,   dimension(maxiens) :: cum_max_edt_land  != maximum evap fraction allowed over the land  ,default= 0.9
-   real,   dimension(maxiens) :: cum_max_edt_ocean != maximum evap fraction allowed over the ocean ,default= 0.9
-   real,   dimension(maxiens) :: cum_ave_layer     != layer depth for average the properties of source air parcels (mbar)
-   real,   dimension(maxiens) :: cum_t_star        != scale temperature for the diurnal cycle closure
-   real,   dimension(maxiens) :: cum_fr_min_entr   != fraction of the minimum entrainment rate
-   real,   dimension(maxiens) :: cum_min_cloud_depth != minimum cloud depth (mbar)
+   real(kind=kind_c3),   dimension(maxiens) :: cum_hei_down_land != [0.2,0.8] height of the max z downdraft , default = 0.50
+   real(kind=kind_c3),   dimension(maxiens) :: cum_hei_down_ocean!= [0.2,0.8] height of the max z downdraft , default = 0.50
+   real(kind=kind_c3),   dimension(maxiens) :: cum_hei_updf_land != [0.2,0.8] height of the max z updraft   , default = 0.35
+   real(kind=kind_c3),   dimension(maxiens) :: cum_hei_updf_ocean!= [0.2,0.8] height of the max z updraft   , default = 0.35
+   real(kind=kind_c3),   dimension(maxiens) :: cum_max_edt_land  != maximum evap fraction allowed over the land  ,default= 0.9
+   real(kind=kind_c3),   dimension(maxiens) :: cum_max_edt_ocean != maximum evap fraction allowed over the ocean ,default= 0.9
+   real(kind=kind_c3),   dimension(maxiens) :: cum_ave_layer     != layer depth for average the properties of source air parcels (mbar)
+   real(kind=kind_c3),   dimension(maxiens) :: cum_t_star        != scale temperature for the diurnal cycle closure
+   real(kind=kind_c3),   dimension(maxiens) :: cum_fr_min_entr   != fraction of the minimum entrainment rate
+   real(kind=kind_c3),   dimension(maxiens) :: cum_min_cloud_depth != minimum cloud depth (mbar)
 
    integer :: moist_trigger  != relative humidity effects on the cap_max trigger function
    integer :: frac_modis     != use fraction liq/ice content derived from modis/calipo sensors
@@ -219,40 +226,40 @@ module module_cu_c3
    integer :: output_sound   != outputs a vertical profile for the gf stand alone model
    integer :: use_sub3d      !=0,1,2 : > 0 activates the 3d subsidence lateral spreading
 
-   real    :: tau_ocea_cp    != cold pool lifetime over the ocean
-   real    :: tau_land_cp    != cold pool lifetime over land
-   real    :: mx_buoy1       !=   250.5 J/kg
-   real    :: mx_buoy2       != 20004.0 J/kg: temp exc=10 K, q deficit=4 g/kg (=> mx_buoy ~ 20 kJ/kg)
-   real    :: use_cloud_dissipation != to acccount for the cloud dissipation at the decayment phase
+   real(kind=kind_c3)    :: tau_ocea_cp    != cold pool lifetime over the ocean
+   real(kind=kind_c3)    :: tau_land_cp    != cold pool lifetime over land
+   real(kind=kind_c3)    :: mx_buoy1       !=   250.5 J/kg
+   real(kind=kind_c3)    :: mx_buoy2       != 20004.0 J/kg: temp exc=10 K, q deficit=4 g/kg (=> mx_buoy ~ 20 kJ/kg)
+   real(kind=kind_c3)    :: use_cloud_dissipation != to acccount for the cloud dissipation at the decayment phase
    integer :: use_gustiness         != not in use
-   real    :: use_random_num        != stochastic pertubation for the height of maximum Zu
-   real    :: beta_sh               != only for shallow plume
+   real(kind=kind_c3)    :: use_random_num        != stochastic pertubation for the height of maximum Zu
+   real(kind=kind_c3)    :: beta_sh               != only for shallow plume
    integer :: use_linear_subcl_mf   != only for shallow plume
-   real    :: cap_maxs              != max distance (hPa) the air parcel is allowed to go up looking for the LFC
+   real(kind=kind_c3)    :: cap_maxs              != max distance (hPa) the air parcel is allowed to go up looking for the LFC
    integer :: liq_ice_number_conc   != include drop/ice number mixing ratio convective tendencies
-   real    :: sig_factor            != exponential factor for the sigma determination (orig = 0.1)
-   real    :: N_cldrop              != cloud drop number concentration (cm\u02c6-3)
+   real(kind=kind_c3)    :: sig_factor            != exponential factor for the sigma determination (orig = 0.1)
+   real(kind=kind_c3)    :: N_cldrop              != cloud drop number concentration (cm\u02c6-3)
 
    !------------------- internal variables  --------------------------------------
 
    integer, parameter :: ON = 1, OFF = 0 !=  ON/OFF integer paremeters
 
-   !real    ::  hei_down_land     != [0.2,0.8] height of the max z downdraft , default = 0.50
-   !real    ::  hei_down_ocean    != [0.2,0.8] height of the max z downdraft , default = 0.50
-   !real    ::  hei_updf_land     != [0.2,0.8] height of the max z updraft   , default = 0.35
-   !real    ::  hei_updf_ocean    != [0.2,0.8] height of the max z updraft   , default = 0.35
-   !real    ::  max_edt_land      != default= 0.9 - maximum evap fraction allowed over the land
-   !real    ::  max_edt_ocean     != default= 0.9 - maximum evap fraction allowed over the ocean
-   !real    ::  fr_min_entr
-   !real    ::  t_star            != scale temperature for the dc closure
-   !real    ::  ave_layer         != layer depth for average the properties of source air parcels (mbar)
-   !real    ::  c0                != autoconversion constant
-   !real    ::  min_cloud_depth   != minimum cloud depth for activate convection
+   !real(kind=kind_c3)    ::  hei_down_land     != [0.2,0.8] height of the max z downdraft , default = 0.50
+   !real(kind=kind_c3)    ::  hei_down_ocean    != [0.2,0.8] height of the max z downdraft , default = 0.50
+   !real(kind=kind_c3)    ::  hei_updf_land     != [0.2,0.8] height of the max z updraft   , default = 0.35
+   !real(kind=kind_c3)    ::  hei_updf_ocean    != [0.2,0.8] height of the max z updraft   , default = 0.35
+   !real(kind=kind_c3)    ::  max_edt_land      != default= 0.9 - maximum evap fraction allowed over the land
+   !real(kind=kind_c3)    ::  max_edt_ocean     != default= 0.9 - maximum evap fraction allowed over the ocean
+   !real(kind=kind_c3)    ::  fr_min_entr
+   !real(kind=kind_c3)    ::  t_star            != scale temperature for the dc closure
+   !real(kind=kind_c3)    ::  ave_layer         != layer depth for average the properties of source air parcels (mbar)
+   !real(kind=kind_c3)    ::  c0                != autoconversion constant
+   !real(kind=kind_c3)    ::  min_cloud_depth   != minimum cloud depth for activate convection
    !integer ::  use_excess        != default= 1   - use for t,q excess sub-grid scale variability
    !integer ::  use_smooth_tend   != default  1,1,1,
 
    integer :: use_cold_start  = 1   != 0/1 default 0
-   real    :: fac_cold_start  = 1
+   real(kind=kind_c3)    :: fac_cold_start  = 1
    !-- General internal controls for the diverse options in GF
 
    logical, parameter :: melt_glac      = .true.  != turn on/off ice phase/melting
@@ -267,27 +274,27 @@ module module_cu_c3
    !
    !- proportionality constant to estimate pressure
    !- gradient of updraft (Zhang and Wu, 2003, JAS) => REAL, PARAMETER ::    pgcon=-0.55
-   real, parameter :: pgcon= 0.0
+   real(kind=kind_c3), parameter :: pgcon= 0.0
 
-   real, parameter ::  delta_ref= 30.e+3  & ! meters
+   real(kind=kind_c3), parameter ::  delta_ref= 30.e+3  & ! meters
                       ,entr_ref = 8.e-4     ! ref entrainment for dx = 30000 m
 
    integer, parameter :: MAX_NSPEC=200
    integer           ,dimension(MAX_NSPEC)    :: ind_chem
    character(len=100),dimension(MAX_NSPEC)    ::  CHEM_NAME
    integer           ,dimension(MAX_NSPEC)    ::  CHEM_NAME_MASK,CHEM_NAME_MASK_EVAP
-   real              ,dimension(MAX_NSPEC)    ::  CHEM_ADJ_AUTOC
+   real(kind=kind_c3)              ,dimension(MAX_NSPEC)    ::  CHEM_ADJ_AUTOC
    integer :: ispc_CO
    type Hcts_vars
-      real :: hstar,dhr,ak0,dak
+      real(kind=kind_c3) :: hstar,dhr,ak0,dak
    end type Hcts_vars
    type (Hcts_vars), allocatable :: Hcts(:)
 
    integer :: whoami_all, JCOL,itime1_in
-   real    :: time_in
+   real(kind=kind_c3)    :: time_in
    logical :: wrtgrads = .false.
    integer :: nrec = 0, ntimes = 0
-   real    :: int_time = 0.
+   real(kind=kind_c3)    :: int_time = 0.
    
    integer :: vec_max_size
    !! max size control loop vector can assume
@@ -426,28 +433,28 @@ module module_cu_c3
       ! outq   = output q tendency (per s)
       ! outqc  = output qc tendency (per s)
       ! pre    = output precip
-      real(kind=kind_phys),    dimension (:,:)  ,intent (inout)  :: outu,outv,outt,outq,outqc&
+      real(kind=kind_c3),    dimension (:,:)  ,intent (inout)  :: outu,outv,outt,outq,outqc&
                                                    ,outbuoy,outnliq ,outnice &
                                                    ,subten_Q,subten_T,subten_U,subten_v
 
-      real(kind=kind_phys),    dimension (:)    ,intent (out  )  :: pre,sig,lightn_dens,var2d1,var2d2
+      real(kind=kind_c3),    dimension (:)    ,intent (out  )  :: pre,sig,lightn_dens,var2d1,var2d2
       !
       ! basic environmental input
       !
-      real(kind=kind_phys),    dimension (:,:)  ,intent (inout)  :: dhdt,rho,t,po,piexner,us,vs,tn,dm2d &
+      real(kind=kind_c3),    dimension (:,:)  ,intent (inout)  :: dhdt,rho,t,po,piexner,us,vs,tn,dm2d &
                                                    ,buoy_exc,tn_bl,tn_adv,cnvcf,turb_len_scale
       
-      real(kind=kind_phys),    dimension (:,:,:),intent (inout)  :: omeg
-      real(kind=kind_phys),    dimension (:,:)  ,intent (inout)  :: q,qo,qo_bl,qo_adv
-      real(kind=kind_phys),    dimension (:)    ,intent (inout)  :: ccn,z1,psur,xland,xlons,xlats  &
+      real(kind=kind_c3),    dimension (:,:,:),intent (inout)  :: omeg
+      real(kind=kind_c3),    dimension (:,:)  ,intent (inout)  :: q,qo,qo_bl,qo_adv
+      real(kind=kind_c3),    dimension (:)    ,intent (inout)  :: ccn,z1,psur,xland,xlons,xlats  &
                                                    ,h_sfc_flux,le_sfc_flux,tsur,dx &
                                                    ,zlcl_sfc
 
-      real(kind=kind_phys),    dimension (:)    ,intent (in   )  :: col_sat,stochastic_sig,tke_pbl
-      real(kind=kind_phys),    dimension (:)    ,intent (inout)  :: zws,ztexec,zqexec,wlpool
-      real(kind=kind_phys)                      ,intent (in   )  :: dtime
-      real(kind=kind_phys),    dimension (:,:,:),intent (inout)  :: mpqi,mpql,mpcf
-      real(kind=kind_phys),    dimension (:,:,:),intent (inout)  :: outmpqi,outmpql,outmpcf
+      real(kind=kind_c3),    dimension (:)    ,intent (in   )  :: col_sat,stochastic_sig,tke_pbl
+      real(kind=kind_c3),    dimension (:)    ,intent (inout)  :: zws,ztexec,zqexec,wlpool
+      real(kind=kind_c3)                      ,intent (in   )  :: dtime
+      real(kind=kind_c3),    dimension (:,:,:),intent (inout)  :: mpqi,mpql,mpcf
+      real(kind=kind_c3),    dimension (:,:,:),intent (inout)  :: outmpqi,outmpql,outmpcf
       integer, dimension (:)    ,intent (in   )  :: max_ktop
       integer, dimension (:)    ,intent (inout)  :: &
           ierr              &
@@ -459,11 +466,11 @@ module module_cu_c3
          ,kstabi            &
          ,kstabm
 
-      real(kind=kind_phys),    dimension (:)     ,intent (inout)  :: &
+      real(kind=kind_c3),    dimension (:)     ,intent (inout)  :: &
           xmb               &
          ,edto              &
          ,pwavo
-      real(kind=kind_phys),    dimension (:,:)   ,intent (inout)  :: &
+      real(kind=kind_c3),    dimension (:,:)   ,intent (inout)  :: &
           po_cup            &
          ,up_massentro      &
          ,up_massdetro      &
@@ -480,23 +487,23 @@ module module_cu_c3
       !Control input:
       integer, intent(in) :: use_excess_cfg
       integer, intent(in) :: use_smooth_tend
-      real(kind=kind_phys), intent(in) :: min_cloud_depth
-      real(kind=kind_phys), intent(in) :: ave_layer
-      real(kind=kind_phys), intent(in) :: entr_rate_input
-      real(kind=kind_phys), intent(in) :: hei_down_land
-      real(kind=kind_phys), intent(in) :: hei_down_ocean
-      real(kind=kind_phys), intent(in) :: hei_updf_land
-      real(kind=kind_phys), intent(in) :: hei_updf_ocean
-      real(kind=kind_phys), intent(in) :: max_edt_land
-      real(kind=kind_phys), intent(in) :: c0
-      real(kind=kind_phys), intent(in) :: max_edt_ocean
-      real(kind=kind_phys), intent(in) :: t_star
-      real(kind=kind_phys), intent(in) :: fr_min_entr
+      real(kind=kind_c3), intent(in) :: min_cloud_depth
+      real(kind=kind_c3), intent(in) :: ave_layer
+      real(kind=kind_c3), intent(in) :: entr_rate_input
+      real(kind=kind_c3), intent(in) :: hei_down_land
+      real(kind=kind_c3), intent(in) :: hei_down_ocean
+      real(kind=kind_c3), intent(in) :: hei_updf_land
+      real(kind=kind_c3), intent(in) :: hei_updf_ocean
+      real(kind=kind_c3), intent(in) :: max_edt_land
+      real(kind=kind_c3), intent(in) :: c0
+      real(kind=kind_c3), intent(in) :: max_edt_ocean
+      real(kind=kind_c3), intent(in) :: t_star
+      real(kind=kind_c3), intent(in) :: fr_min_entr
 
       !------------------------------------------------------
       ! local ensemble dependent variables in this routine
-      real,    dimension (its:ite,1:maxens2) ::   edtc
-      real,    dimension (its:ite,1:ensdim)  ::   xf_ens,pr_ens
+      real(kind=kind_c3),    dimension (its:ite,1:maxens2) ::   edtc
+      real(kind=kind_c3),    dimension (its:ite,1:ensdim)  ::   xf_ens,pr_ens
       !
       !*******the following are your basic environmental
       !          variables. They carry a "_cup" if they are
@@ -575,8 +582,8 @@ module module_cu_c3
       ! edt     = epsilon
       character(len=128) :: ierrc(its:ite)      
 
-      real :: dsubh_aver,dellah_aver,x_add
-      real :: day,dz,dzo,radius,entrd_rate,zcutdown,depth_min,zkbmax,z_detr,zktop       &
+      real(kind=kind_c3) :: dsubh_aver,dellah_aver,x_add
+      real(kind=kind_c3) :: day,dz,dzo,radius,entrd_rate,zcutdown,depth_min,zkbmax,z_detr,zktop       &
         ,massfld,dh,trash,frh,xlamdd,radiusd,frhd,effec_entrain,detdo1,detdo2,entdo     &
         ,dp,subin,detdo,entup,detup,subdown,entdoj,entupk,detupk,totmas,min_entr_rate   &
         ,tot_time_hr,beta,env_mf,env_mf_p,env_mf_m,dts,denom,denomU
@@ -586,10 +593,10 @@ module module_cu_c3
       integer :: vtp_index
       
       integer, dimension (its:ite) :: kzdown,kdet,kb, kbmax,start_level,ierr_24,ierr_31
-      real,    dimension (its:ite,1:maxens3) ::  xff_mid
-      real,    dimension (its:ite,shall_closures) :: xff_shal
+      real(kind=kind_c3),    dimension (its:ite,1:maxens3) ::  xff_mid
+      real(kind=kind_c3),    dimension (its:ite,shall_closures) :: xff_shal
 
-      real,    dimension (its:ite) ::                                                      &
+      real(kind=kind_c3),    dimension (its:ite) ::                                                      &
          edt,aa1,aa0,xaa0,hkb,hkbo,xhkb,qkb, pwevo,bu,bud,cap_max,xland1,vshear            &
         ,cap_max_increment,psum,psumh,sigd,mconv,rescale_entrain,entr_rate,mentrd_rate     &
         ,v_ratio, aa0_bl,aa1_bl,tau_bl,tau_ecmwf,wmean,aa1_fa,aa1_tmp                      &
@@ -600,9 +607,9 @@ module module_cu_c3
         ,check_sig,random,rh_entr_factor,rntot,delqev,delq2,qevap,rn,qcond,rainevap,vshear2&
         ,entr_rescaled,overshoot_rescaled,precip_rescaled
 
-      real, dimension (kts:kte) ::xh_env_eff
+      real(kind=kind_c3), dimension (kts:kte) ::xh_env_eff
 
-      real, dimension (kts:kte,its:ite) ::                                            &
+      real(kind=kind_c3), dimension (kts:kte,its:ite) ::                                            &
           entr_rate_2d,mentrd_rate_2d, he, hes, qes, z,heo,heso,qeso,zo               &
          ,xhe,xhes,xqes,xz,xt,xq, qes_cup, q_cup, he_cup, hes_cup, z_cup, p_cup       &
          ,gamma_cup, t_cup,qeso_cup,qo_cup,heo_cup,heso_cup,zo_cup,gammao_cup,tn_cup  &
@@ -613,23 +620,23 @@ module module_cu_c3
          ,p_liq_ice,melting_layer,melting ,up_massentru,up_massdetru,dd_massentru     &
          ,dd_massdetru, prec_flx,evap_flx,qrs,zenv,entr_rate_2d_initial
 
-      real, dimension (nmp,kts:kte,its:ite) ::  dellampqi,dellampql,dellampcf
+      real(kind=kind_c3), dimension (nmp,kts:kte,its:ite) ::  dellampqi,dellampql,dellampcf
 
       !-- atmos composition arrays
-      real(kind=kind_phys), dimension (: )   ,intent (in)    ::   fscav   !(mtp )  
-      real(kind=kind_phys), dimension (:,:,:),intent (inout) ::   se_chem !(mtp,kts:kte,its:ite)
-      real(kind=kind_phys), dimension (:,:,:),intent (inout) ::   out_chem!(mtp,kts:kte,its:ite)
+      real(kind=kind_c3), dimension (: )   ,intent (in)    ::   fscav   !(mtp )  
+      real(kind=kind_c3), dimension (:,:,:),intent (inout) ::   se_chem !(mtp,kts:kte,its:ite)
+      real(kind=kind_c3), dimension (:,:,:),intent (inout) ::   out_chem!(mtp,kts:kte,its:ite)
 
       integer :: ispc,kmp,istep,lstep
-      real, dimension (mtp,kts:kte,its:ite) ::  se_cup_chem,sc_up_chem,sc_dn_chem,pw_up_chem,pw_dn_chem
-      real, dimension (mtp,its:ite)         ::  tot_pw_up_chem,tot_pw_dn_chem
-      real                                  ::  evap_(mtp),wetdep_(mtp),trash_(mtp),trash2_(mtp) &
+      real(kind=kind_c3), dimension (mtp,kts:kte,its:ite) ::  se_cup_chem,sc_up_chem,sc_dn_chem,pw_up_chem,pw_dn_chem
+      real(kind=kind_c3), dimension (mtp,its:ite)         ::  tot_pw_up_chem,tot_pw_dn_chem
+      real(kind=kind_c3)                                  ::  evap_(mtp),wetdep_(mtp),trash_(mtp),trash2_(mtp) &
                                                ,massi,massf,dtime_max,evap,wetdep,residu_(mtp)   &
                                                ,s1,s2,q1,q2,rzenv,factor,CWV,entr_threshold      &
                                                ,resten_H,resten_Q,resten_T,alp0,beta1,beta2      
       !----------------------------------------------------------------------
       !-- only for debug (atmos composition)
-      real, allocatable, dimension (:,:,:),save    ::   se_chem_update
+      real(kind=kind_c3), allocatable, dimension (:,:,:),save    ::   se_chem_update
 
       !--only for debug
       if(p_use_gate) then
@@ -671,7 +678,7 @@ module module_cu_c3
       call reset_2d(its,ite,kts,kte,zo,z,xz,hcdo,cupclw,qrcdo,hcot,xf_ens,pr_ens  &
                    ,evap_bcb,uc,vc,hc,hco, zuo,zdo,zenv)
       !  
-      !---  create a real random number in the interval [-use_random_num, +use_random_num]
+      !---  create a real(kind=kind_c3) random number in the interval [-use_random_num, +use_random_num]
       if( cumulus == 'deep' .and. use_random_num > 1.e-6) &
          call gen_random(its,ite,use_random_num,random)
       !
@@ -1374,20 +1381,20 @@ module module_cu_c3
       !
       ! ierr error value, maybe modified in this routine
       !
-      real,    dimension (:,:),intent (in   ) :: rho,us,vs,z,p,pw
-      real,    dimension (:)  ,intent (in   ) :: pwav,pwev,ccn,psum2,psumh,edtmax,edtmin
+      real(kind=kind_c3),    dimension (:,:),intent (in   ) :: rho,us,vs,z,p,pw
+      real(kind=kind_c3),    dimension (:)  ,intent (in   ) :: pwav,pwev,ccn,psum2,psumh,edtmax,edtmin
       integer, dimension (:)  ,intent (in   ) :: ktop,kbcon
       integer, dimension (:)  ,intent (inout) :: ierr
-      real,    dimension (:,:),intent (out  ) :: edtc
-      real,    dimension (:)  ,intent (out  ) :: edt,vshear
+      real(kind=kind_c3),    dimension (:,:),intent (out  ) :: edtc
+      real(kind=kind_c3),    dimension (:)  ,intent (out  ) :: edt,vshear
       !
       !  local variables in this routine
       !
       integer i,k,kk,vtp_index
-      real    einc,pef,pefb,prezk,zkbc
-      real,    dimension (its:ite)         ::   vws,sdp
-      real :: pefc,aeroadd,rhoc,dp,prop_c
-      real, parameter ::  alpha3 = 1.9 ,beta3  = -1.13
+      real(kind=kind_c3)    einc,pef,pefb,prezk,zkbc
+      real(kind=kind_c3),    dimension (its:ite)         ::   vws,sdp
+      real(kind=kind_c3) :: pefc,aeroadd,rhoc,dp,prop_c
+      real(kind=kind_c3), parameter ::  alpha3 = 1.9 ,beta3  = -1.13
 
       !
       !--- DETERMINE DOWNDRAFT STRENGTH IN TERMS OF WINDSHEAR
@@ -1488,19 +1495,19 @@ module module_cu_c3
       ! entr = entrainment rate
       ! cdd  = detrainment function
       !
-      real,    dimension (:)   ,intent (in   ) :: t_wetbulb,q_wetbulb, pwavo
-      real,    dimension (:,:) ,intent (in   ) :: zd,t_cup,hes_cup,hcd,qes_cup,q_cup,z_cup  &
+      real(kind=kind_c3),    dimension (:)   ,intent (in   ) :: t_wetbulb,q_wetbulb, pwavo
+      real(kind=kind_c3),    dimension (:,:) ,intent (in   ) :: zd,t_cup,hes_cup,hcd,qes_cup,q_cup,z_cup  &
                                                  ,dd_massentr,dd_massdetr,gamma_cup,q,he,qco
       integer, dimension (:)   ,intent (in   ) :: jmin
       integer, dimension (:)   ,intent (inout) :: ierr
-      real,    dimension (:,:) ,intent (out  ) :: qcd,qrcd,pwd,tempcdo
-      real,    dimension (:)   ,intent (out  ) :: pwev,bu
+      real(kind=kind_c3),    dimension (:,:) ,intent (out  ) :: qcd,qrcd,pwd,tempcdo
+      real(kind=kind_c3),    dimension (:)   ,intent (out  ) :: pwev,bu
       character*(*), intent (inout), dimension(:)  :: ierrc
       !
       !  local variables in this routine
       !
       integer   ::     i,k,vtp_index
-      real      ::     dh,dz,dq_eva,denom,fix_evap
+      real(kind=kind_c3)      ::     dh,dz,dq_eva,denom,fix_evap
       !
       bu  =0.  !-- buoyancy
       qcd =0.  !-- in-downdradt water vapor mixing ratio
@@ -1629,17 +1636,17 @@ module module_cu_c3
       ! psur        = surface pressure
       ! z1          = terrain elevation
       !
-      real,    dimension (:,:),intent (in   )  :: p,t,q
-      real,    dimension (:,:),intent (out  )  :: he,hes,qes
-      real,    dimension (:,:),intent (in   )  :: z
-      real,    dimension (:)  ,intent (in   )  :: psur,z1
+      real(kind=kind_c3),    dimension (:,:),intent (in   )  :: p,t,q
+      real(kind=kind_c3),    dimension (:,:),intent (out  )  :: he,hes,qes
+      real(kind=kind_c3),    dimension (:,:),intent (in   )  :: z
+      real(kind=kind_c3),    dimension (:)  ,intent (in   )  :: psur,z1
       integer, dimension (:)  ,intent (in   )  :: ierr
       integer                 ,intent (in   )  :: itest
       !
       !  local variables in this routine
       !
       integer ::  i,k, vtp_index
-      real    ::  pqsat
+      real(kind=kind_c3)    ::  pqsat
 
       !he  =0.0
       !hes =0.0
@@ -1697,16 +1704,16 @@ module module_cu_c3
       ! psur        = surface pressure
       ! z1          = terrain elevation
       !
-      real,    dimension (:,:) ,intent (in )  :: qes,q,he,hes,z,p,t,us, vs
-      real,    dimension (:,:) ,intent (out)  :: qes_cup,q_cup,he_cup,hes_cup,z_cup &
+      real(kind=kind_c3),    dimension (:,:) ,intent (in )  :: qes,q,he,hes,z,p,t,us, vs
+      real(kind=kind_c3),    dimension (:,:) ,intent (out)  :: qes_cup,q_cup,he_cup,hes_cup,z_cup &
                                                 ,p_cup,gamma_cup,t_cup,u_cup,v_cup
-      real,    dimension (:)   ,intent (in )  :: psur,z1,tsur
+      real(kind=kind_c3),    dimension (:)   ,intent (in )  :: psur,z1,tsur
       integer, dimension (:)   ,intent (in )  :: ierr
       !
       !  local variables in this routine
       !
       integer                              :: i,k, vtp_index 
-      real                                 :: p1,p2,ct1,ct2,rho
+      real(kind=kind_c3)                                 :: p1,p2,ct1,ct2,rho
 
       ! qes_cup  =0.
       ! q_cup    =0.
@@ -1914,23 +1921,23 @@ module module_cu_c3
       !
       integer  ,intent (in   )    :: itf,ktf,its,ite, kts,kte,maxens,maxens3
       integer, dimension (:)   ,intent (in) :: k22,kbcon,ktop,kpbl
-      real,    dimension (:,:) ,intent (in) :: po_cup,dhdt,hc,hco,he_cup,heo_cup
-      real,    dimension (:)   ,intent (in) :: xaa0
-      real,    dimension (:)   ,intent (in) :: aa1,zws,mbdt,  aa0
-      real                     ,intent (in) :: dtime
+      real(kind=kind_c3),    dimension (:,:) ,intent (in) :: po_cup,dhdt,hc,hco,he_cup,heo_cup
+      real(kind=kind_c3),    dimension (:)   ,intent (in) :: xaa0
+      real(kind=kind_c3),    dimension (:)   ,intent (in) :: aa1,zws,mbdt,  aa0
+      real(kind=kind_c3)                     ,intent (in) :: dtime
       integer                  ,intent (in) :: ichoice
-      real,    dimension (:)   ,intent (in) :: aa1_bl,tau_ecmwf,wlpool,cin1
+      real(kind=kind_c3),    dimension (:)   ,intent (in) :: aa1_bl,tau_ecmwf,wlpool,cin1
       integer, dimension (:)   ,intent (inout) :: ierr
-      real,    dimension (:)   ,intent (inout) :: xf_dicycle,xf_coldpool
-      real,    dimension (:,:) ,intent (out)   :: xff_mid
+      real(kind=kind_c3),    dimension (:)   ,intent (inout) :: xf_dicycle,xf_coldpool
+      real(kind=kind_c3),    dimension (:,:) ,intent (out)   :: xff_mid
       !
       !  local variables in this routine
       !
-      real, dimension (its:ite)     :: xk
+      real(kind=kind_c3), dimension (its:ite)     :: xk
       integer                       :: i,k,vtp_index
-      real                          :: xff_dicycle, trash, blqe,xff_ens1,mf_ens1
-      real                          :: KE_gf,W_cb
-      real, parameter               :: c1 = 0.06, c2 = 1., c3 = 0.28,  c4 = 0.0 !0.64 
+      real(kind=kind_c3)                          :: xff_dicycle, trash, blqe,xff_ens1,mf_ens1
+      real(kind=kind_c3)                          :: KE_gf,W_cb
+      real(kind=kind_c3), parameter               :: c1 = 0.06, c2 = 1., c3 = 0.28,  c4 = 0.0 !0.64 
 
       !-initialization
       xff_mid     (:,:)= 0.
@@ -2022,12 +2029,12 @@ module module_cu_c3
       ! x output array with return values
       ! kt output array of levels
       ! ks,kend  check-range
-      real,    dimension (:,:),intent (in   ) :: array
+      real(kind=kind_c3),    dimension (:,:),intent (in   ) :: array
       integer, dimension (:)  ,intent (in   ) :: ierr,ks,kend
       integer, dimension (:)  ,intent (out  ) :: kt
       
       !-- local vars
-      real,    dimension (its:ite)            :: x
+      real(kind=kind_c3),    dimension (its:ite)            :: x
       integer                                 :: i,k,kstop,vtp_index
 
       kt(:) = ks(:)
@@ -2060,15 +2067,15 @@ module module_cu_c3
       integer                  , intent(in) :: itf,ktf,its,ite, kts,kte
       integer, dimension (:)   , intent (in):: k22,klcl,kbcon,ktop
 
-      real,    dimension (:,:) , intent (in):: z_cup,zu,gamma_cup,t_cup,dby
+      real(kind=kind_c3),    dimension (:,:) , intent (in):: z_cup,zu,gamma_cup,t_cup,dby
       !
       ! input and output
       integer, dimension (:) ,intent (in   )  :: ierr
-      real,    dimension (:) ,intent (out  )  :: aa0
+      real(kind=kind_c3),    dimension (:) ,intent (out  )  :: aa0
       !
       !  local variables in this routine
       integer                             ::  i,k,vtp_index
-      real                                ::  dz,da,aa_2,aa_1
+      real(kind=kind_c3)                                ::  dz,da,aa_2,aa_1
       integer, dimension (its:ite)        ::  kbeg,kend
       !
       !
@@ -2119,7 +2126,7 @@ module module_cu_c3
       !  on input
       integer  ,intent (in   ) ::  use_excess,itest,itf,ktf    &
                                   ,its,ite, kts,kte
-      real, intent(in) :: dtime, ave_layer, c0
+      real(kind=kind_c3), intent(in) :: dtime, ave_layer, c0
       ! cd= detrainment function
       ! q = environmental q on model levels
       ! qe_cup = environmental q on model cloud levels
@@ -2131,16 +2138,16 @@ module module_cu_c3
       !
       character *(*)              ,intent (in) ::  name
       integer, dimension (:)      ,intent (in) ::  kbcon,ktop,k22,klcl,start_level
-      real,    dimension (:,:)    ,intent (in) ::  t_cup,p_cup,rho,q,zu,gamma_cup       &
+      real(kind=kind_c3),    dimension (:,:)    ,intent (in) ::  t_cup,p_cup,rho,q,zu,gamma_cup       &
                                                   ,qe_cup,hc,po,up_massentr,up_massdetr &
                                                   ,dby,qes_cup,z_cup,cd,qes
 
-      real,  dimension (:)        ,intent (in) ::  zqexec,xland,x_add_buoy
-      real,  dimension (:)        ,intent (in) ::  zws,ccn,z1
-      real,  dimension (:,:)      ,intent (in) ::  entr_rate_2d
-      real,  dimension (:,:)      ,intent (in) ::  cnvcf
-      real,  dimension (:,:)      ,intent (in) ::  vvel2d
-      real,  dimension (:)        ,intent (in) ::  vvel1d
+      real(kind=kind_c3),  dimension (:)        ,intent (in) ::  zqexec,xland,x_add_buoy
+      real(kind=kind_c3),  dimension (:)        ,intent (in) ::  zws,ccn,z1
+      real(kind=kind_c3),  dimension (:,:)      ,intent (in) ::  entr_rate_2d
+      real(kind=kind_c3),  dimension (:,:)      ,intent (in) ::  cnvcf
+      real(kind=kind_c3),  dimension (:,:)      ,intent (in) ::  vvel2d
+      real(kind=kind_c3),  dimension (:)        ,intent (in) ::  vvel1d
       !
       ! input and output
       !
@@ -2153,25 +2160,25 @@ module module_cu_c3
       ! pwav = totan normalized integrated condensate (I1)
       ! c0 = conversion rate (cloud to rain)
 
-      real,   dimension (:,:)     ,intent (out)   :: qc,qrc,pw,clw_all,tempc
-      real,   dimension (:)       ,intent (out)   :: pwav,psum,psumh
+      real(kind=kind_c3),   dimension (:,:)     ,intent (out)   :: qc,qrc,pw,clw_all,tempc
+      real(kind=kind_c3),   dimension (:)       ,intent (out)   :: pwav,psum,psumh
       character(len=128)          ,intent (inout) :: ierrc(:)
       !
       !  local variables in this routine
       !
       integer :: iounit,iprop,i,k,k1,k2,n,nsteps,vtp_index,kii,kff
-      real :: dp,rhoc,dh,qrch,dz,radius,berryc0,q1,berryc
-      real :: qaver,denom,aux,cx0,qrci,step,cbf,qrc_crit_BF,min_liq,qavail
-      real :: delt,tem1,qrc_0,cup,hei,qrc_crit_yin,dz1m,vs,Nc,w_upd,Faut
-      real, dimension(kts:kte) :: q_env_eff
+      real(kind=kind_c3) :: dp,rhoc,dh,qrch,dz,radius,berryc0,q1,berryc
+      real(kind=kind_c3) :: qaver,denom,aux,cx0,qrci,step,cbf,qrc_crit_BF,min_liq,qavail
+      real(kind=kind_c3) :: delt,tem1,qrc_0,cup,hei,qrc_crit_yin,dz1m,vs,Nc,w_upd,Faut
+      real(kind=kind_c3), dimension(kts:kte) :: q_env_eff
       integer, parameter :: n_smooth=1
-      real, parameter :: qrc_crit_yin_ref=-500.*log(2000./9500)*1.e-6/0.93
-      real, parameter :: peaut     = .55       ! collection efficiency
-      real, parameter :: r0        = .8e-5     ! 8 microm  in contrast to 10 micro m
-      real, parameter :: xmyu      = 1.718e-5  ! the dynamic viscosity kgm-1s-1
-      real, parameter :: rhowater  = 1000.  ! density of liquid water at 0^oc (kg m^-3)
-      real, parameter :: rhosnow   = 100.   ! density of snow (kg m^-3)
-      real, parameter :: rhoair0   = 1.28   ! density of dry air at 0^oc and 1000mb pressure (kg m^-3)
+      real(kind=kind_c3), parameter :: qrc_crit_yin_ref=-500.*log(2000./9500)*1.e-6/0.93
+      real(kind=kind_c3), parameter :: peaut     = .55       ! collection efficiency
+      real(kind=kind_c3), parameter :: r0        = .8e-5     ! 8 microm  in contrast to 10 micro m
+      real(kind=kind_c3), parameter :: xmyu      = 1.718e-5  ! the dynamic viscosity kgm-1s-1
+      real(kind=kind_c3), parameter :: rhowater  = 1000.  ! density of liquid water at 0^oc (kg m^-3)
+      real(kind=kind_c3), parameter :: rhosnow   = 100.   ! density of snow (kg m^-3)
+      real(kind=kind_c3), parameter :: rhoair0   = 1.28   ! density of dry air at 0^oc and 1000mb pressure (kg m^-3)
       pwav    (:)   = 0.0
       psum    (:)   = 0.0
       psumh   (:)   = 0.0
@@ -2444,11 +2451,11 @@ module module_cu_c3
       !
       character *(*)           ,intent (in) ::  name
       integer, dimension (:)   ,intent (in) ::  kbcon,ktop,k22,klcl,start_level
-      real,    dimension (:,:) ,intent (in) ::  t_cup,p_cup,rho,q,zu,gamma_cup       &
+      real(kind=kind_c3),    dimension (:,:) ,intent (in) ::  t_cup,p_cup,rho,q,zu,gamma_cup       &
                                                ,qe_cup,hc,po,up_massentr,up_massdetr &
                                                ,dby,qes_cup,z_cup,cd
 
-      real,  dimension (:)     ,intent (in) ::  zqexec,xland,x_add_buoy
+      real(kind=kind_c3),  dimension (:)     ,intent (in) ::  zqexec,xland,x_add_buoy
       !
       ! input and output
       !
@@ -2462,16 +2469,16 @@ module module_cu_c3
       ! pwav = totan normalized integrated condensate (I1)
       ! c0 = conversion rate (cloud to rain)
 
-      real,   dimension (:,:) ,intent (out)   :: qc,qrc,pw,clw_all,tempc
-      real,   dimension (:)   ,intent (out)   :: pwav,psum,psumh
-      real                    ,intent (in)    :: ave_layer,c0
+      real(kind=kind_c3),   dimension (:,:) ,intent (out)   :: qc,qrc,pw,clw_all,tempc
+      real(kind=kind_c3),   dimension (:)   ,intent (out)   :: pwav,psum,psumh
+      real(kind=kind_c3)                    ,intent (in)    :: ave_layer,c0
       character(len=128)           ,intent (inout) :: ierrc(:)
       !
       !  local variables in this routine
       !
-      real, parameter :: FRACT = 1.
+      real(kind=kind_c3), parameter :: FRACT = 1.
       integer         :: iounit,iprop,i,k,k1,k2,n,nsteps,vtp_index
-      real            :: dp,rhoc,dh,qrch,dz,radius,berryc0,q1,berryc            &
+      real(kind=kind_c3)            :: dp,rhoc,dh,qrch,dz,radius,berryc0,q1,berryc            &
                         ,qaver,denom,aux,cx0,qrci,step,cbf,qrc_crit_BF,min_liq  &
                         ,qavail,delt_hc_glac,delt,tem1
 
@@ -2554,17 +2561,17 @@ module module_cu_c3
       implicit none
       character *(*), intent (in) :: draft
       integer, intent(in) :: itf,ktf, its,ite, kts,kte
-      real,    intent(in) :: min_entr_rate
+      real(kind=kind_c3),    intent(in) :: min_entr_rate
       integer, intent(in)   , dimension(:)            :: ierr,ktop,kbcon,k22,kpbl
-      real,    intent(in)   , dimension(:), optional  :: lambau
-      real,    intent(in)   , dimension(:,:) :: zo_cup,zuo,po_cup
-      real,    intent(inout), dimension(:,:) :: cd,entr_rate_2d
-      real,    intent(out)  , dimension(:,:) :: up_massentro, up_massdetro
-      real,    intent(out)  , dimension(:,:), optional :: up_massentru,up_massdetru
+      real(kind=kind_c3),    intent(in)   , dimension(:), optional  :: lambau
+      real(kind=kind_c3),    intent(in)   , dimension(:,:) :: zo_cup,zuo,po_cup
+      real(kind=kind_c3),    intent(inout), dimension(:,:) :: cd,entr_rate_2d
+      real(kind=kind_c3),    intent(out)  , dimension(:,:) :: up_massentro, up_massdetro
+      real(kind=kind_c3),    intent(out)  , dimension(:,:), optional :: up_massentru,up_massdetru
       !
       !-- local vars
       integer :: i,k, turn, ismooth1,ismooth2, vtp_index
-      real :: dz, mass1,mass2,dp,rho,zuo_ave
+      real(kind=kind_c3) :: dz, mass1,mass2,dp,rho,zuo_ave
       integer, parameter :: MASS_U_OPTION = 1
       
       integer ::  incr1=1, incr2=1, nlay, k_ent
@@ -2740,15 +2747,15 @@ module module_cu_c3
       implicit none
       character *(*), intent (in)            :: draft,cumulus
       integer, intent(in)                    :: itf,ktf, its,ite, kts,kte
-      real,    intent(in)   , dimension(:)   :: mentrd_rate
+      real(kind=kind_c3),    intent(in)   , dimension(:)   :: mentrd_rate
       integer, intent(in)   , dimension(:)   :: ierr,jmin
-      real,    intent(in)   , dimension(:)   :: lambau
-      real,    intent(in)   , dimension(:,:) :: zo_cup,zdo
-      real,    intent(inout), dimension(:,:) :: cdd,mentrd_rate_2d
-      real,    intent(  out), dimension(:,:) :: dd_massentro, dd_massdetro
-      real,    intent(  out), dimension(:,:), optional :: dd_massentru, dd_massdetru
+      real(kind=kind_c3),    intent(in)   , dimension(:)   :: lambau
+      real(kind=kind_c3),    intent(in)   , dimension(:,:) :: zo_cup,zdo
+      real(kind=kind_c3),    intent(inout), dimension(:,:) :: cdd,mentrd_rate_2d
+      real(kind=kind_c3),    intent(  out), dimension(:,:) :: dd_massentro, dd_massdetro
+      real(kind=kind_c3),    intent(  out), dimension(:,:), optional :: dd_massentru, dd_massdetru
       integer ::i,ki,vtp_index
-      real :: dzo
+      real(kind=kind_c3) :: dzo
 
       cdd          = 0.
       dd_massentro = 0.
@@ -2826,23 +2833,23 @@ module module_cu_c3
       character*(*), intent(in) ::draft,cumulus
       integer, intent(in   ) :: kts,kte,ktf,kpbli,k22,kbcon,kt,kb,klcl,vtp_index
       integer, intent(inout) :: ierr
-      real   , intent(in   ) :: po_cup(:),psur,xland,random,x_add_buoy
-      real   , intent(inout) :: zu(:)
-      real   , intent(in) :: hei_down_land
-      real   , intent(in) :: hei_down_ocean
-      real   , intent(in) :: hei_updf_land
-      real   , intent(in) :: hei_updf_ocean
+      real(kind=kind_c3)   , intent(in   ) :: po_cup(:),psur,xland,random,x_add_buoy
+      real(kind=kind_c3)   , intent(inout) :: zu(:)
+      real(kind=kind_c3)   , intent(in) :: hei_down_land
+      real(kind=kind_c3)   , intent(in) :: hei_down_ocean
+      real(kind=kind_c3)   , intent(in) :: hei_updf_land
+      real(kind=kind_c3)   , intent(in) :: hei_updf_ocean
       !
       !- local var
       integer :: i,k,kb_adj,kpbli_adj,level_max_zu
-      real :: zumax,ztop_adj,beta, alpha,kratio,tunning,FZU,krmax,dzudk,hei_updf,hei_down
-      real :: zul(kts:kte),  pmaxzu ! pressure height of max zu for deep
+      real(kind=kind_c3) :: zumax,ztop_adj,beta, alpha,kratio,tunning,FZU,krmax,dzudk,hei_updf,hei_down
+      real(kind=kind_c3) :: zul(kts:kte),  pmaxzu ! pressure height of max zu for deep
 
       integer:: minzu,maxzul,maxzuh,kstart
       logical :: do_smooth
 
       integer :: k1
-      real :: wgty,dp_layer,slope,adj_cp_entr
+      real(kind=kind_c3) :: wgty,dp_layer,slope,adj_cp_entr
      
       DO_SMOOTH = .true.
 
@@ -3083,17 +3090,17 @@ module module_cu_c3
       ! qrco   = in-cloud liquid water mixing ratio on model cloud levels
       character(len=*), intent(in) :: integ_interval
 
-      real,    dimension (:,:) ,intent (in   ) :: z_cup,zu,gamma_cup,t_cup,dby,tempco &
+      real(kind=kind_c3),    dimension (:,:) ,intent (in   ) :: z_cup,zu,gamma_cup,t_cup,dby,tempco &
                                                  ,qco,qrco, qo_cup
       integer, dimension (:)   ,intent (in   ) :: k22,kbcon,ktop,klcl
       !
       ! input and output
       integer, dimension (:)   ,intent (inout) ::  ierr
-      real,    dimension (:)   ,intent (out  ) ::  aa0
+      real(kind=kind_c3),    dimension (:)   ,intent (out  ) ::  aa0
       !
       !  local variables in this routine
       integer       ::   i,k,vtp_index
-      real          ::   dz,daa0,daa1,daa2
+      real(kind=kind_c3)          ::   dz,daa0,daa1,daa2
       integer, dimension (its:ite) ::  kbeg,kend
       !
 
@@ -3134,24 +3141,24 @@ module module_cu_c3
       integer                   ,intent (in   ) :: itf,ktf,its,ite, kts,kte,use_excess
       integer, dimension (:)    ,intent (in   ) :: kbmax,start_level_,max_ktop
       integer, dimension (:)    ,intent (inout) :: kbcon,ierr,ktop,klcl,k22
-      real,    dimension (:,:)  ,intent (in   ) :: heo_cup,heso_cup,po_cup,z_cup,heo &
+      real(kind=kind_c3),    dimension (:,:)  ,intent (in   ) :: heo_cup,heso_cup,po_cup,z_cup,heo &
                                                   ,qo_cup,qeso_cup,po,qo,qeso,heso
-      real,    dimension (:)    ,intent (in   ) :: cap_max_in,cap_inc,xland,wlpool
-      real,    dimension (:)    ,intent (in   ) :: zqexec,ztexec,x_add_buoy,overshoot_rescaled
-      real,    dimension (:)    ,intent (inout) :: hkbo,depth_neg_buoy,frh
-      real,    dimension (:,:)  ,intent (in)    :: entr_rate_2d,cnvcf
-      real,    dimension (:,:)  ,intent (inout) :: hcot
-      real                      ,intent (in)    :: min_cloud_depth,ave_layer
+      real(kind=kind_c3),    dimension (:)    ,intent (in   ) :: cap_max_in,cap_inc,xland,wlpool
+      real(kind=kind_c3),    dimension (:)    ,intent (in   ) :: zqexec,ztexec,x_add_buoy,overshoot_rescaled
+      real(kind=kind_c3),    dimension (:)    ,intent (inout) :: hkbo,depth_neg_buoy,frh
+      real(kind=kind_c3),    dimension (:,:)  ,intent (in)    :: entr_rate_2d,cnvcf
+      real(kind=kind_c3),    dimension (:,:)  ,intent (inout) :: hcot
+      real(kind=kind_c3)                      ,intent (in)    :: min_cloud_depth,ave_layer
       !  local variables in this routine
-      real, parameter :: cap_max_wlpool = 0.0
-      real                         :: Z_overshoot !--- height of cloud overshoot is 10% higher than the LNB.
+      real(kind=kind_c3), parameter :: cap_max_wlpool = 0.0
+      real(kind=kind_c3)                         :: Z_overshoot !--- height of cloud overshoot is 10% higher than the LNB.
                                                   !--- Typically it can 2 - 2.5km higher, but it depends on
                                                   !--- the severity of the thunderstorm.
       integer                      ::   i,k,vtp_index,icount,kk
       integer, dimension (its:ite) ::   start_level
-      real                         ::   dz, denom, min_deep_top, cloud_depth    
-      real   , dimension (its:ite) ::   x_add,cap_max
-      real   , dimension (kts:kte,its:ite) ::   h_env_eff
+      real(kind=kind_c3)                         ::   dz, denom, min_deep_top, cloud_depth    
+      real(kind=kind_c3)   , dimension (its:ite) ::   x_add,cap_max
+      real(kind=kind_c3)   , dimension (kts:kte,its:ite) ::   h_env_eff
     
       
       ktop       (:) = kts
@@ -3283,8 +3290,8 @@ module module_cu_c3
       implicit none
       integer                    ,intent (in)  :: itf,ktf,its,ite, kts,kte
       integer, dimension (:)     ,intent (in)  :: ierr,klcl,kbcon,ktop
-      real,    dimension (:,:)   ,intent (in)  :: hc,he_cup,hes_cup,z_cup
-      real,    dimension (:,:)   ,intent (out) :: dby
+      real(kind=kind_c3),    dimension (:,:)   ,intent (in)  :: hc,he_cup,hes_cup,z_cup
+      real(kind=kind_c3),    dimension (:,:)   ,intent (out) :: dby
       integer :: i,k,vtp_index
 
       dby(:,:) = 0.0
@@ -3309,25 +3316,25 @@ module module_cu_c3
 
       implicit none
       integer                  ,intent (in   )  ::  itf,ktf,its,ite, kts,kte
-      real,    dimension (:,:) ,intent (in   )  ::  z,z_cup,zu,gamma_cup,t_cup,dby &
+      real(kind=kind_c3),    dimension (:,:) ,intent (in   )  ::  z,z_cup,zu,gamma_cup,t_cup,dby &
                                                    ,entr_rate_2d,cd,tempco,qco,qrco,qo
 
       integer, dimension (:)   ,intent (in   )  ::  klcl,kbcon,ktop,start_level
-      real,    dimension (:)   ,intent (in   )  ::  zws
-      real,    dimension (:)   ,intent (inout)  ::  wlpool
+      real(kind=kind_c3),    dimension (:)   ,intent (in   )  ::  zws
+      real(kind=kind_c3),    dimension (:)   ,intent (inout)  ::  wlpool
 
       ! input and output
       integer, dimension (:)   ,intent (inout) ::  ierr
-      real,    dimension (:,:) ,intent (out  ) ::  vvel2d
-      real,    dimension (:)   ,intent (out  ) ::  vvel1d
-      real,    dimension (:)   ,intent (inout) ::  wlpool_bcon
+      real(kind=kind_c3),    dimension (:,:) ,intent (out  ) ::  vvel2d
+      real(kind=kind_c3),    dimension (:)   ,intent (out  ) ::  vvel1d
+      real(kind=kind_c3),    dimension (:)   ,intent (inout) ::  wlpool_bcon
 
       !
       !  local variables in this routine
       integer            ::  i,k,k1,nvs,vtp_index
-      real               ::  dz,BU,dw2,dw1,kx,dz1m,Tv,Tve,vs,ke
-      real   , parameter :: f=2., C_d=0.506, gam=0.5, beta=1.875, eps=0.622
-      real   , parameter :: ftun1=0.10, ftun2=1.0
+      real(kind=kind_c3)               ::  dz,BU,dw2,dw1,kx,dz1m,Tv,Tve,vs,ke
+      real(kind=kind_c3)   , parameter :: f=2., C_d=0.506, gam=0.5, beta=1.875, eps=0.622
+      real(kind=kind_c3)   , parameter :: ftun1=0.10, ftun2=1.0
       logical, parameter :: smooth=.true.
       integer, parameter :: n_smooth=1
       
@@ -3436,37 +3443,37 @@ module module_cu_c3
       ! ierr error value, maybe modified in this routine
       !
       character *(*)            ,intent (in   ) :: cumulus
-      real,    dimension (:,:)  ,intent (inout) :: xf_ens,pr_ens
-      real,    dimension (:,:)  ,intent (out  ) :: outtem,outq,outqc,outu,outv,outbuoy &
+      real(kind=kind_c3),    dimension (:,:)  ,intent (inout) :: xf_ens,pr_ens
+      real(kind=kind_c3),    dimension (:,:)  ,intent (out  ) :: outtem,outq,outqc,outu,outv,outbuoy &
                                                   ,subten_T,subten_Q,subten_U,subten_V
 
-      real,    dimension (:,:,:),intent (out  ) :: outmpqi,outmpql,outmpcf
+      real(kind=kind_c3),    dimension (:,:,:),intent (out  ) :: outmpqi,outmpql,outmpcf
       
-      real,    dimension (:,:)  ,intent (in   ) :: zu,po_cup,pwo,pwdo,piexner
-      real,    dimension (:)    ,intent (in   ) :: sig,wlpool_bcon,edto,precip_rescaled
+      real(kind=kind_c3),    dimension (:,:)  ,intent (in   ) :: zu,po_cup,pwo,pwdo,piexner
+      real(kind=kind_c3),    dimension (:)    ,intent (in   ) :: sig,wlpool_bcon,edto,precip_rescaled
     
-      real,    dimension (:,:)  ,intent (in   ) :: xff_mid
-      real,    dimension (:)    ,intent (out  ) :: pre,xmb
+      real(kind=kind_c3),    dimension (:,:)  ,intent (in   ) :: xff_mid
+      real(kind=kind_c3),    dimension (:)    ,intent (out  ) :: pre,xmb
       
-      real,    dimension (:)    ,intent (in   ) :: xland1
-      real,    dimension (:,:)  ,intent (inout) :: pwo_eff,dellat,dellaqc,dellaq &
+      real(kind=kind_c3),    dimension (:)    ,intent (in   ) :: xland1
+      real(kind=kind_c3),    dimension (:,:)  ,intent (inout) :: pwo_eff,dellat,dellaqc,dellaq &
                                                   ,dellu,dellv,dellabuoy
-      real,    dimension (:,:,:),intent (in   ) :: dellampqi,dellampql,dellampcf
+      real(kind=kind_c3),    dimension (:,:,:),intent (in   ) :: dellampqi,dellampql,dellampcf
 
       integer, dimension (:)    ,intent (in   ) :: ktop,kbcon
       integer, dimension (:)    ,intent (inout) :: ierr
-      real,    dimension (:)    ,intent (inout) :: xf_dicycle,xf_coldpool
-      real,                      intent (in   ) :: dtime
-      real,   dimension (:,:)   ,intent (in   ) :: xff_shal
+      real(kind=kind_c3),    dimension (:)    ,intent (inout) :: xf_dicycle,xf_coldpool
+      real(kind=kind_c3),                      intent (in   ) :: dtime
+      real(kind=kind_c3),   dimension (:,:)   ,intent (in   ) :: xff_shal
       !
       !  local variables in this routine
       !
       integer                          :: i,k,n,ncount,zmax,kk,kqmx,ktmx,vtp_index
-      real                             :: outtes,ddtes,dtt,dtq,dtqc &
+      real(kind=kind_c3)                             :: outtes,ddtes,dtt,dtq,dtqc &
                                          ,dtpw,prerate,fixouts,dp   &
                                          ,xfixQ,xfixT,dtts,dtqs,fsum, rcount,temp2theta
-      real,    dimension (its:ite)     :: xmb_ave,xmbmax
-      real,    dimension (8)           :: tend1d
+      real(kind=kind_c3),    dimension (its:ite)     :: xmb_ave,xmbmax
+      real(kind=kind_c3),    dimension (8)           :: tend1d
       !
       !-- init/reset 
       outtem  = 0.
@@ -3707,34 +3714,34 @@ module module_cu_c3
       ! ichoice       = flag if only want one closure (usually set to zero!)
       ! name        = deep or shallow convection flag
       !
-      real,    dimension (:,:)    ,intent (inout)  :: pr_ens
-      real,    dimension (:,:)    ,intent (out  )  :: xf_ens
-      real,    dimension (:,:)    ,intent (in   )  :: zd,zu,p_cup,qo
-      real,    dimension (:,:,:)  ,intent (in   )  :: omeg
-      real,    dimension (:)      ,intent (in   )  :: xaa0
-      real,    dimension (:)      ,intent (in   )  :: aa1,edt,xland
-      real,    dimension (:)      ,intent (inout)  :: mconv
-      real,    dimension (:)      ,intent (in   )  :: aa0
-      real,    dimension (:)      ,intent (in   )  :: mbdt
-      real                        ,intent (in   )  :: dtime
+      real(kind=kind_c3),    dimension (:,:)    ,intent (inout)  :: pr_ens
+      real(kind=kind_c3),    dimension (:,:)    ,intent (out  )  :: xf_ens
+      real(kind=kind_c3),    dimension (:,:)    ,intent (in   )  :: zd,zu,p_cup,qo
+      real(kind=kind_c3),    dimension (:,:,:)  ,intent (in   )  :: omeg
+      real(kind=kind_c3),    dimension (:)      ,intent (in   )  :: xaa0
+      real(kind=kind_c3),    dimension (:)      ,intent (in   )  :: aa1,edt,xland
+      real(kind=kind_c3),    dimension (:)      ,intent (inout)  :: mconv
+      real(kind=kind_c3),    dimension (:)      ,intent (in   )  :: aa0
+      real(kind=kind_c3),    dimension (:)      ,intent (in   )  :: mbdt
+      real(kind=kind_c3)                        ,intent (in   )  :: dtime
       integer, dimension (:)      ,intent (in   )  :: k22,kbcon,ktop
       integer, dimension (:)      ,intent (inout)  :: ierr
       integer                     ,intent (in   )  :: ichoice
 
-      real,    dimension (:)      ,intent(in)      :: aa1_bl,tau_ecmwf,alpha_adv&
+      real(kind=kind_c3),    dimension (:)      ,intent(in)      :: aa1_bl,tau_ecmwf,alpha_adv&
                                                      ,Q_adv,aa1_radpbl,wlpool,cin1
-      real,    dimension (:)      ,intent(inout)   :: xf_dicycle,xk_x,xf_coldpool
+      real(kind=kind_c3),    dimension (:)      ,intent(inout)   :: xf_dicycle,xk_x,xf_coldpool
      
       !
       !  local variables in this routine
       !
       integer                          :: i,k,kk,nall,n,ne,nens,nens3,vtp_index
-      real                             :: xff_dicycle
-      real                             :: a1,a_ave,xff0,xomg,KE_gf,W_cb
-      real, parameter                  :: c1 = 0.06, c2 = 1., c3 = 0.28,  c4 = 0.0 !0.64 
-      real, dimension (1:maxens3)      :: xff_ens3
-      real, dimension (its:ite)        :: xk
-      real, dimension (its:ite)        :: ens_adj
+      real(kind=kind_c3)                             :: xff_dicycle
+      real(kind=kind_c3)                             :: a1,a_ave,xff0,xomg,KE_gf,W_cb
+      real(kind=kind_c3), parameter                  :: c1 = 0.06, c2 = 1., c3 = 0.28,  c4 = 0.0 !0.64 
+      real(kind=kind_c3), dimension (1:maxens3)      :: xff_ens3
+      real(kind=kind_c3), dimension (its:ite)        :: xk
+      real(kind=kind_c3), dimension (its:ite)        :: ens_adj
       !
       ens_adj(:)=1.
       xf_ens(:,1:16)= 0.
@@ -3936,15 +3943,15 @@ module module_cu_c3
       character *(*), intent (in)              :: cumulus
       integer  ,intent (in   )                 :: itf,ktf, its,ite, kts,kte
       integer  ,intent (in   ), dimension(:)   :: ierr
-      real     ,intent (in   ), dimension(:)   :: z1
-      real     ,intent (in   ), dimension(:,:) :: tn,po_cup,zo_cup
-      real     ,intent (inout), dimension(:,:) :: p_liq_ice,melting_layer
+      real(kind=kind_c3)     ,intent (in   ), dimension(:)   :: z1
+      real(kind=kind_c3)     ,intent (in   ), dimension(:,:) :: tn,po_cup,zo_cup
+      real(kind=kind_c3)     ,intent (inout), dimension(:,:) :: p_liq_ice,melting_layer
       
       !Local variables:
       integer :: i,k, vtp_index
-      real    :: dp, height
-      real, dimension(its:ite) :: norm
-      real, parameter ::  T1=276.16, Z_meltlayer1=4000.,Z_meltlayer2=6000.,delT=3.
+      real(kind=kind_c3)    :: dp, height
+      real(kind=kind_c3), dimension(its:ite) :: norm
+      real(kind=kind_c3), parameter ::  T1=276.16, Z_meltlayer1=4000.,Z_meltlayer2=6000.,delT=3.
 
       p_liq_ice    (:,:) = 1.
       melting_layer(:,:) = 0.
@@ -4009,15 +4016,15 @@ module module_cu_c3
       character *(*), intent (in)              :: cumulus
       integer  ,intent (in   )                 :: itf,ktf, its,ite, kts,kte
       integer  ,intent (in   ), dimension(:)   :: ierr
-      real     ,intent (in   ), dimension(:)   :: edto
-      real     ,intent (in   ), dimension(:,:) :: tn_cup,po_cup,qrco,pwo &
+      real(kind=kind_c3)     ,intent (in   ), dimension(:)   :: edto
+      real(kind=kind_c3)     ,intent (in   ), dimension(:,:) :: tn_cup,po_cup,qrco,pwo &
                                                  ,pwdo,p_liq_ice,melting_layer
-      real     ,intent (inout), dimension(:,:) :: melting
+      real(kind=kind_c3)     ,intent (inout), dimension(:,:) :: melting
       !-local vars
       integer :: i,k,vtp_index
-      real    :: dp
-      real, dimension(its:ite)         :: norm,total_pwo_solid_phase
-      real, dimension(kts:kte,its:ite) :: pwo_solid_phase,pwo_eff
+      real(kind=kind_c3)    :: dp
+      real(kind=kind_c3), dimension(its:ite)         :: norm,total_pwo_solid_phase
+      real(kind=kind_c3), dimension(kts:kte,its:ite) :: pwo_solid_phase,pwo_eff
 
       if(MELT_GLAC .and. cumulus == 'deep') then
 
@@ -4085,10 +4092,10 @@ module module_cu_c3
       implicit none
       integer                  ,intent (in   ) :: itf,ktf,its,ite, kts,kte
       integer, dimension (:)   ,intent (in   ) :: ierr,ktop
-      real   , dimension (:,:) ,intent (in   ) :: po_cup,us,vs,dellu,dellv
-      real   , dimension (:,:) ,intent (inout) :: dellat
+      real(kind=kind_c3)   , dimension (:,:) ,intent (in   ) :: po_cup,us,vs,dellu,dellv
+      real(kind=kind_c3)   , dimension (:,:) ,intent (inout) :: dellat
 
-      real :: dts,fp,dp,fpi
+      real(kind=kind_c3) :: dts,fp,dp,fpi
       integer ::i,k,vtp_index
 
       ! since kinetic energy is being dissipated, add heating accordingly (from ECMWF)
@@ -4121,7 +4128,7 @@ module module_cu_c3
                                        ,pwevo,pwo,pwdo,pre,prec_flx,evap_flx,outt,outq,outbuoy,evap_bcb)
 
       implicit none
-      real, parameter :: alpha1=5.44e-4 & !1/sec
+      real(kind=kind_c3), parameter :: alpha1=5.44e-4 & !1/sec
                         ,alpha2=5.09e-3 & !unitless
                         ,alpha3=0.5777  & !unitless
                         ,c_conv=0.05      !conv fraction area, unitless
@@ -4129,17 +4136,17 @@ module module_cu_c3
       character*(*)           ,intent(in)    :: cumulus
       integer                 ,intent(in)    :: itf,ktf, its,ite, kts,kte
       integer, dimension(:)   ,intent(in)    :: ierr,kbcon,ktop
-      real,    dimension(:)   ,intent(in)    :: psur,xland,pwavo,edto,pwevo,xmb
-      real,    dimension(:,:) ,intent(in)    :: po_cup,qo_cup,qes_cup,pwo,pwdo,t_cup
-      real,    dimension(:)   ,intent(inout) :: pre
-      real,    dimension(:,:) ,intent(inout) :: outt,outq,outbuoy,prec_flx,evap_flx
-      real,    dimension(:,:) ,intent(out)   :: evap_bcb
-      real                    ,intent(in)    :: c0
+      real(kind=kind_c3),    dimension(:)   ,intent(in)    :: psur,xland,pwavo,edto,pwevo,xmb
+      real(kind=kind_c3),    dimension(:,:) ,intent(in)    :: po_cup,qo_cup,qes_cup,pwo,pwdo,t_cup
+      real(kind=kind_c3),    dimension(:)   ,intent(inout) :: pre
+      real(kind=kind_c3),    dimension(:,:) ,intent(inout) :: outt,outq,outbuoy,prec_flx,evap_flx
+      real(kind=kind_c3),    dimension(:,:) ,intent(out)   :: evap_bcb
+      real(kind=kind_c3)                    ,intent(in)    :: c0
       !-- locals
       integer :: i,k,vtp_index
-      real    :: RH_cr , del_t,del_q,dp,q_deficit, pqsat, temp_pre
-      real    :: RH_cr_OCEAN,RH_cr_LAND
-      real,    dimension(its:ite) :: tot_evap_bcb,eff_c_conv
+      real(kind=kind_c3)    :: RH_cr , del_t,del_q,dp,q_deficit, pqsat, temp_pre
+      real(kind=kind_c3)    :: RH_cr_OCEAN,RH_cr_LAND
+      real(kind=kind_c3),    dimension(its:ite) :: tot_evap_bcb,eff_c_conv
 
       if(cumulus == 'shallow') then
          RH_cr_OCEAN   = 1.0
@@ -4240,10 +4247,10 @@ module module_cu_c3
       character *(*)         ,intent (in) :: cumulus
       integer                ,intent (in) :: itf,ktf,its,ite,kts,kte
       integer, dimension(:)  ,intent (in) :: kbcon,ktop,k22,klcl,ierr
-      real,    dimension(:)  ,intent (in) :: xland,pwavo,pwevo,edto,pre,xmb
-      real,    dimension(:,:),intent (in) :: pwo,pwdo,t_cup,tempco
-      real,    dimension(:,:),intent (out):: prec_flx,evap_flx !-- units kg[water]/m2/s
-      real                   ,intent (in) :: c0
+      real(kind=kind_c3),    dimension(:)  ,intent (in) :: xland,pwavo,pwevo,edto,pre,xmb
+      real(kind=kind_c3),    dimension(:,:),intent (in) :: pwo,pwdo,t_cup,tempco
+      real(kind=kind_c3),    dimension(:,:),intent (out):: prec_flx,evap_flx !-- units kg[water]/m2/s
+      real(kind=kind_c3)                   ,intent (in) :: c0
       !-- locals
       integer :: i,k,vtp_index
       prec_flx = 0.0
@@ -4282,19 +4289,19 @@ module module_cu_c3
 
       implicit none
       character *(*)             ,intent (in)    :: cumulus
-      real                       ,intent (in)    :: depth_min
+      real(kind=kind_c3)                       ,intent (in)    :: depth_min
       integer                    ,intent (in)    :: itf,ktf,its,ite,kts,kte
       integer, dimension(:)      ,intent (in)    :: ktop,kbcon
-      real,    dimension(:,:)    ,intent (in)    :: heso_cup,zo_cup,melting_layer
+      real(kind=kind_c3),    dimension(:,:)    ,intent (in)    :: heso_cup,zo_cup,melting_layer
 
       integer, dimension(:)      ,intent (inout) :: ierr,jmin,kdet
-      real                       ,intent (out)   :: beta
+      real(kind=kind_c3)                       ,intent (out)   :: beta
       character(len=128),              intent (out)   :: ierrc(:)
 
       !-- local vars
       integer :: i,k,jmini,ki,vtp_index
-      real    :: dh,dz
-      real,    dimension(kts:kte,its:ite)  ::  hcdo
+      real(kind=kind_c3)    :: dh,dz
+      real(kind=kind_c3),    dimension(kts:kte,its:ite)  ::  hcdo
       logical :: keep_going
 
       if(cumulus == 'shallow'  ) then
@@ -4372,16 +4379,16 @@ module module_cu_c3
       character *(*), intent (in)             :: cumulus
       integer  ,intent (in )                  :: itf,ktf, its,ite, kts,kte
       integer  ,intent (in ),  dimension(:)   :: ierr
-      real     ,intent(in  )                  :: min_entr_rate
-      real     ,intent (in ),  dimension(:,:) :: t,po,qo,po_cup
-      real     ,intent (out),  dimension(:)   :: p_cwv_ave
-      real     ,intent (inout),dimension(:)   :: entr_rate,var2d1
+      real(kind=kind_c3)     ,intent(in  )                  :: min_entr_rate
+      real(kind=kind_c3)     ,intent (in ),  dimension(:,:) :: t,po,qo,po_cup
+      real(kind=kind_c3)     ,intent (out),  dimension(:)   :: p_cwv_ave
+      real(kind=kind_c3)     ,intent (inout),dimension(:)   :: entr_rate,var2d1
 
       !--locals
       integer :: i,k, vtp_index
-      real    :: dp, trash, tun
-      real, dimension(its:ite) :: w_col,w_ccrit,t_troposph
-      real, parameter :: fpkup=0.8  !-- 90% of precip occurs above 80% of critical w
+      real(kind=kind_c3)    :: dp, trash, tun
+      real(kind=kind_c3), dimension(its:ite) :: w_col,w_ccrit,t_troposph
+      real(kind=kind_c3), parameter :: fpkup=0.8  !-- 90% of precip occurs above 80% of critical w
 
       p_cwv_ave = 0.0
       !if(cumulus /= 'deep') return
@@ -4433,24 +4440,24 @@ module module_cu_c3
       implicit none
       integer                     ,intent (in)   :: itf,ktf,its,ite, kts,kte,ichoice
       integer ,dimension (:)      ,intent (in)   :: klcl,kpbl,kbcon,k22,ktop
-      real                        ,intent (in)   :: dtime
-      real    ,dimension (:)      ,intent (in)   :: tsur,cape,h_sfc_flux,le_sfc_flux &
+      real(kind=kind_c3)                        ,intent (in)   :: dtime
+      real(kind=kind_c3)    ,dimension (:)      ,intent (in)   :: tsur,cape,h_sfc_flux,le_sfc_flux &
                                                    ,zws,tke_pbl,wlpool,ke_gustfront
-      real    ,dimension (:,:)    ,intent (in)   :: po,hco,heo_cup,po_cup,t_cup,dhdt,rho
+      real(kind=kind_c3)    ,dimension (:,:)    ,intent (in)   :: po,hco,heo_cup,po_cup,t_cup,dhdt,rho
  
       integer ,dimension (:)      ,intent (in)   :: ierr
       character(len=128),dimension (:) ,intent (in)   :: ierrc
-      real    ,dimension (:)      ,intent (inout):: xmb,xf_dicycle,xf_coldpool
-      real    ,dimension (:,:)    ,intent (out  ):: xff_shal2d
+      real(kind=kind_c3)    ,dimension (:)      ,intent (inout):: xmb,xf_dicycle,xf_coldpool
+      real(kind=kind_c3)    ,dimension (:,:)    ,intent (out  ):: xff_shal2d
 
       !---local vars
-      real   ,dimension (its:ite)    :: xmbmax
+      real(kind=kind_c3)   ,dimension (its:ite)    :: xmbmax
       integer :: i,k,kbase,vtp_index
-      real    :: blqe,trash,tcold,fin,fsum,efic,thot,dp
-      real    ,dimension (shall_closures)  :: xff_shal
+      real(kind=kind_c3)    :: blqe,trash,tcold,fin,fsum,efic,thot,dp
+      real(kind=kind_c3)    ,dimension (shall_closures)  :: xff_shal
       !-- tuning numbers for the TKE-based closure for shallow convection   
-     !real,parameter :: p_k1 = 1.2, p_cloud_area = 0.15
-      real,parameter :: p_k1 = 1.2, p_cloud_area = 0.10
+     !real(kind=kind_c3),parameter :: p_k1 = 1.2, p_cloud_area = 0.15
+      real(kind=kind_c3),parameter :: p_k1 = 1.2, p_cloud_area = 0.10
 
       !
       xmb       (:)     = 0.
@@ -4549,25 +4556,25 @@ module module_cu_c3
       implicit none
       integer                 ,intent(in)  :: itf,ktf, its,ite, kts,kte
       integer, dimension(:)   ,intent(in)  :: ierr,kbcon,ktop
-      real,    dimension(:)   ,intent(in)  :: cape,xland
-      real,    dimension(:,:) ,intent(in)  :: po_cup,zo_cup,t_cup,t,tempco,zo &
+      real(kind=kind_c3),    dimension(:)   ,intent(in)  :: cape,xland
+      real(kind=kind_c3),    dimension(:,:) ,intent(in)  :: po_cup,zo_cup,t_cup,t,tempco,zo &
                                              ,qrco,rho,prec_flx
 
-      real,    dimension(:)   ,intent(out) :: lightn_dens ! lightning flash density
+      real(kind=kind_c3),    dimension(:)   ,intent(out) :: lightn_dens ! lightning flash density
                                                           ! rate (units: 1/km2/day)
 
       !-- locals
-      real, parameter :: p_V_graup     = 3.0  ! m/s
-      real, parameter :: p_V_snow      = 0.5  ! m/s
-      real, parameter :: p_beta_land   = 0.70 ! 1
-      real, parameter :: p_beta_ocean  = 0.45 ! 1
-      real, parameter :: p_alpha       = 37.5 ! 1
-      real, parameter :: p_t_initial   =  0.0 + 273.15 ! K
-      real, parameter :: p_t_final     = -25. + 273.15 ! K
+      real(kind=kind_c3), parameter :: p_V_graup     = 3.0  ! m/s
+      real(kind=kind_c3), parameter :: p_V_snow      = 0.5  ! m/s
+      real(kind=kind_c3), parameter :: p_beta_land   = 0.70 ! 1
+      real(kind=kind_c3), parameter :: p_beta_ocean  = 0.45 ! 1
+      real(kind=kind_c3), parameter :: p_alpha       = 37.5 ! 1
+      real(kind=kind_c3), parameter :: p_t_initial   =  0.0 + 273.15 ! K
+      real(kind=kind_c3), parameter :: p_t_final     = -25. + 273.15 ! K
 
       integer :: i, k, k_initial, k_final,vtp_index
-      real    :: Q_R, z_base,beta,prec_flx_fr,dz
-      real,    dimension(kts:kte) :: p_liq_ice, q_graup,q_snow
+      real(kind=kind_c3)    :: Q_R, z_base,beta,prec_flx_fr,dz
+      real(kind=kind_c3),    dimension(kts:kte) :: p_liq_ice, q_graup,q_snow
       
       lightn_dens(:) = 0.0
       
@@ -4622,21 +4629,21 @@ module module_cu_c3
       character *(*)         ,intent (in) :: cumulus
       integer                ,intent (in) :: itf,ktf,its,ite,kts,kte
       integer, dimension(:)  ,intent (in) :: kbcon,ktop,k22,klcl,ierr
-      real,    dimension(:)  ,intent (in) :: xland,pwavo
-      real,    dimension(:,:),intent (in) :: zo_cup,qco,qrco,pwo,po,p_cup,t_cup,zuo       &
+      real(kind=kind_c3),    dimension(:)  ,intent (in) :: xland,pwavo
+      real(kind=kind_c3),    dimension(:,:),intent (in) :: zo_cup,qco,qrco,pwo,po,p_cup,t_cup,zuo       &
                                             ,up_massentr,up_massdetr,vvel2d,tempco,rho
       !--for future use (rain water mixing ratio)
-      real,    dimension(:,:),intent (out) :: qrs      !-- units kg[water]/kg[air]
-      real                   ,intent (in) :: c0
+      real(kind=kind_c3),    dimension(:,:),intent (out) :: qrs      !-- units kg[water]/kg[air]
+      real(kind=kind_c3)                   ,intent (in) :: c0
       !-- locals
       integer :: i,k,vtp_index
-      real :: tmp
+      real(kind=kind_c3) :: tmp
       integer, dimension(its:ite) :: start_level
-      real :: dz,z1,zrnew,zc,zd,zint,z2,zrold,denom,fall_fact,wup, exp1,R_vr
-      real,    dimension(kts:kte) :: prec_flx_rain,prec_flx_snow
-      real,    dimension(kts:kte) :: pw,p_liq_ice ! - rainfall source
-      real,    parameter :: rho1000mb = 1.2 , rhow = 1000., N_r = 0.1 ! cm^-3, rainfall drops number concen
-      real,    parameter :: exp_KR    = 1./5. &! Kuo & Raymond 1983
+      real(kind=kind_c3) :: dz,z1,zrnew,zc,zd,zint,z2,zrold,denom,fall_fact,wup, exp1,R_vr
+      real(kind=kind_c3),    dimension(kts:kte) :: prec_flx_rain,prec_flx_snow
+      real(kind=kind_c3),    dimension(kts:kte) :: pw,p_liq_ice ! - rainfall source
+      real(kind=kind_c3),    parameter :: rho1000mb = 1.2 , rhow = 1000., N_r = 0.1 ! cm^-3, rainfall drops number concen
+      real(kind=kind_c3),    parameter :: exp_KR    = 1./5. &! Kuo & Raymond 1983
          ,exp_SB    = 2./3.  ! Seifert & Beheng 2006 eq 27
 
       qrs = 0.
@@ -4724,8 +4731,8 @@ module module_cu_c3
       implicit none
       !Parameters:
       character(len=*), parameter :: procedureName = 'sound' ! Subroutine Name
-      real, parameter :: p_latsnd = -10., p_lonsnd = 301., p_deltx = 0.2
-      !      real, parameter :: LATSND= -8.72, LONSND= 186.6, DELTX=0.2
+      real(kind=kind_c3), parameter :: p_latsnd = -10., p_lonsnd = 301., p_deltx = 0.2
+      !      real(kind=kind_c3), parameter :: LATSND= -8.72, LONSND= 186.6, DELTX=0.2
    
       !Variables (input, output, inout)
       integer, intent(in) ::ens4, itf, its, ite, kts, kte, jcol, whoami_all, part
@@ -4735,69 +4742,69 @@ module module_cu_c3
       integer, intent(in) :: kbcon(:)
       integer, intent(in) :: ktop(:)
 
-      real, intent(in) :: zo_cup(:, :)
-      real, intent(in) :: zuo(:, :)
-      real, intent(in) :: zdo(:, :)
-      real, intent(in) :: up_massentro(:, :)
-      real, intent(in) :: up_massdetro(:, :)
-      real, intent(in) :: outt(:, :)
-      real, intent(in) :: outq(:, :)
-      real, intent(in) :: outqc(:, :)
-      real, intent(in) :: outu(:, :)
-      real, intent(in) :: outv(:, :)
-      real, intent(in) :: stochastic_sig(:)
-      real, intent(in) :: xland(:)
-      real, intent(in) :: aa0(:)
-      real, intent(in) :: aa1(:)
-      real, intent(in) :: xaa0(:)
-      real, intent(in) :: hkb(:)
-      real, intent(in) :: xmb(:)
-      real, intent(in) :: pre(:)
-      real, intent(in) :: edto(:)
-      real, intent(in) :: sig(:)
+      real(kind=kind_c3), intent(in) :: zo_cup(:, :)
+      real(kind=kind_c3), intent(in) :: zuo(:, :)
+      real(kind=kind_c3), intent(in) :: zdo(:, :)
+      real(kind=kind_c3), intent(in) :: up_massentro(:, :)
+      real(kind=kind_c3), intent(in) :: up_massdetro(:, :)
+      real(kind=kind_c3), intent(in) :: outt(:, :)
+      real(kind=kind_c3), intent(in) :: outq(:, :)
+      real(kind=kind_c3), intent(in) :: outqc(:, :)
+      real(kind=kind_c3), intent(in) :: outu(:, :)
+      real(kind=kind_c3), intent(in) :: outv(:, :)
+      real(kind=kind_c3), intent(in) :: stochastic_sig(:)
+      real(kind=kind_c3), intent(in) :: xland(:)
+      real(kind=kind_c3), intent(in) :: aa0(:)
+      real(kind=kind_c3), intent(in) :: aa1(:)
+      real(kind=kind_c3), intent(in) :: xaa0(:)
+      real(kind=kind_c3), intent(in) :: hkb(:)
+      real(kind=kind_c3), intent(in) :: xmb(:)
+      real(kind=kind_c3), intent(in) :: pre(:)
+      real(kind=kind_c3), intent(in) :: edto(:)
+      real(kind=kind_c3), intent(in) :: sig(:)
 
-      real, intent(in) :: int_time, dtime
+      real(kind=kind_c3), intent(in) :: int_time, dtime
 
       character(len=*), intent(in)    :: cumulus
 
       integer, intent(inout) :: kpbl(:)
 
-      real, intent(inout) :: h_sfc_flux(:)
-      real, intent(inout) :: le_sfc_flux(:)
-      real, intent(inout) :: tsur(:)
-      real, intent(inout) :: dx(:)
-      real, intent(inout) :: zws(:)
-      real, intent(inout) :: ztexec(:)
-      real, intent(inout) :: zqexec(:)
-      real, intent(inout) :: xlats(:)      
-      real, intent(inout) :: xlons(:)      
-      real, intent(inout) :: z1(:)
-      real, intent(inout) :: psur(:)
-      real, intent(inout) :: qes(:, :)
-      real, intent(inout) :: he(:, :)
-      real, intent(inout) :: hes(:, :)
-      real, intent(inout) :: t(:, :)
-      real, intent(inout) :: q(:, :)
-      real, intent(inout) :: po(:, :)
-      real, intent(inout) :: zo(:, :)
-      real, intent(inout) :: heo(:, :)
-      real, intent(inout) :: heso(:, :)
-      real, intent(inout) :: tn(:, :)
-      real, intent(inout) :: qo(:, :)
-      real, intent(inout) :: us(:, :)
-      real, intent(inout) :: vs(:, :)
-      real, intent(inout) :: dhdt(:, :)
-      real, intent(inout) :: omeg(:, :, :)
+      real(kind=kind_c3), intent(inout) :: h_sfc_flux(:)
+      real(kind=kind_c3), intent(inout) :: le_sfc_flux(:)
+      real(kind=kind_c3), intent(inout) :: tsur(:)
+      real(kind=kind_c3), intent(inout) :: dx(:)
+      real(kind=kind_c3), intent(inout) :: zws(:)
+      real(kind=kind_c3), intent(inout) :: ztexec(:)
+      real(kind=kind_c3), intent(inout) :: zqexec(:)
+      real(kind=kind_c3), intent(inout) :: xlats(:)      
+      real(kind=kind_c3), intent(inout) :: xlons(:)      
+      real(kind=kind_c3), intent(inout) :: z1(:)
+      real(kind=kind_c3), intent(inout) :: psur(:)
+      real(kind=kind_c3), intent(inout) :: qes(:, :)
+      real(kind=kind_c3), intent(inout) :: he(:, :)
+      real(kind=kind_c3), intent(inout) :: hes(:, :)
+      real(kind=kind_c3), intent(inout) :: t(:, :)
+      real(kind=kind_c3), intent(inout) :: q(:, :)
+      real(kind=kind_c3), intent(inout) :: po(:, :)
+      real(kind=kind_c3), intent(inout) :: zo(:, :)
+      real(kind=kind_c3), intent(inout) :: heo(:, :)
+      real(kind=kind_c3), intent(inout) :: heso(:, :)
+      real(kind=kind_c3), intent(inout) :: tn(:, :)
+      real(kind=kind_c3), intent(inout) :: qo(:, :)
+      real(kind=kind_c3), intent(inout) :: us(:, :)
+      real(kind=kind_c3), intent(inout) :: vs(:, :)
+      real(kind=kind_c3), intent(inout) :: dhdt(:, :)
+      real(kind=kind_c3), intent(inout) :: omeg(:, :, :)
 
-      real, intent(out) :: z(:, :)
-      real, intent(out) :: xz(:, :)
-      real, intent(out) :: qeso(:, :)
-      real, intent(out) :: rho(:, :)
+      real(kind=kind_c3), intent(out) :: z(:, :)
+      real(kind=kind_c3), intent(out) :: xz(:, :)
+      real(kind=kind_c3), intent(out) :: qeso(:, :)
+      real(kind=kind_c3), intent(out) :: rho(:, :)
 
       !---locals
       integer :: i, k, x_kte, x_i, x_jcol, x_k
-      real :: x_time
-      real, dimension(its:ite) :: x_stochastic_sig, x_xland
+      real(kind=kind_c3) :: x_time
+      real(kind=kind_c3), dimension(its:ite) :: x_stochastic_sig, x_xland
       
       character(len=200) :: lixo
 
@@ -4940,18 +4947,18 @@ module module_cu_c3
       implicit none
       character*(*)                ,intent(in)    :: cumulus
       integer                      ,intent(in)    :: itf,ktf, its,ite, kts,kte
-      real                         ,intent(in)    :: dtime
+      real(kind=kind_c3)                         ,intent(in)    :: dtime
       integer, dimension(:)        ,intent(in)    :: ierr,kbcon,ktop
-      real,    dimension(:)        ,intent(in)    :: xmb,xland,sig
-      real,    dimension(:,:)      ,intent(in)    :: po_cup,qo_cup,qeso_cup,zuo,vvel2d &
+      real(kind=kind_c3),    dimension(:)        ,intent(in)    :: xmb,xland,sig
+      real(kind=kind_c3),    dimension(:,:)      ,intent(in)    :: po_cup,qo_cup,qeso_cup,zuo,vvel2d &
                                                     ,tempco,qco,tn_cup,heso_cup,zo,zo_cup
-      real,    dimension(:,:)      ,intent(inout) :: outt,outq,outqc,qrco
+      real(kind=kind_c3),    dimension(:,:)      ,intent(inout) :: outt,outq,outqc,qrco
 
       !-- locals
       integer :: i,k,vtp_index
-      real    ::  del_t,del_q,dp,frh,rho_hydr
-      real    :: qrc_diss,fractional_area,outqc_diss,outq_mix,outt_diss,outt_mix,tempx,qvx
-      real, parameter :: cloud_lifetime= 1800.
+      real(kind=kind_c3)    ::  del_t,del_q,dp,frh,rho_hydr
+      real(kind=kind_c3)    :: qrc_diss,fractional_area,outqc_diss,outq_mix,outt_diss,outt_mix,tempx,qvx
+      real(kind=kind_c3), parameter :: cloud_lifetime= 1800.
 
       integer, parameter :: versionx = 2
       do vtp_index = get_num_elements(vec_ok),1,-1
@@ -5204,17 +5211,17 @@ module module_cu_c3
 
       implicit none
       integer,   intent (in )  :: itf,ktf,its,ite,kts,kte
-      real,      intent (in )  :: dtime
+      real(kind=kind_c3),      intent (in )  :: dtime
 
       integer, dimension (:)   ,intent (in )  :: ierr,ktop
-      real,    dimension (:,:) ,intent (in )  :: outqc,tempco,rho
-      real,    dimension (:,:) ,intent (out)  :: outnliq,outnice
+      real(kind=kind_c3),    dimension (:,:) ,intent (in )  :: outqc,tempco,rho
+      real(kind=kind_c3),    dimension (:,:) ,intent (out)  :: outnliq,outnice
 
       integer :: i,k,vtp_index
-      real    :: fr,tqliq,tqice,dtinv
+      real(kind=kind_c3)    :: fr,tqliq,tqice,dtinv
 
-      real,   dimension (kts:kte,its:ite) :: nwfa   ! in the future set this as NCPL
-      real,   dimension (kts:kte,its:ite) :: nifa   ! in the future set this as NCPI
+      real(kind=kind_c3),   dimension (kts:kte,its:ite) :: nwfa   ! in the future set this as NCPL
+      real(kind=kind_c3),   dimension (kts:kte,its:ite) :: nifa   ! in the future set this as NCPI
 
 
       nwfa(:,:) =  99.e7  ! in the future set this as NCPL
@@ -5258,15 +5265,15 @@ module module_cu_c3
 
    !+---+-----------------------------------------------------------------+
    !+---+-----------------------------------------------------------------+
-   elemental real function makeIceNumber (Q_ice, temp)
+   elemental real(kind=kind_c3) function makeIceNumber (Q_ice, temp)
 
       implicit none
-      real, parameter:: ice_density = 890.0
-      real, parameter:: c_pi = 3.1415926536
-      real, intent(in):: q_ice, temp
+      real(kind=kind_c3), parameter:: ice_density = 890.0
+      real(kind=kind_c3), parameter:: c_pi = 3.1415926536
+      real(kind=kind_c3), intent(in):: q_ice, temp
       integer :: idx_rei
-      real :: corr, reice, deice
-      double precision :: lambda
+      real(kind=kind_c3) :: corr, reice, deice
+      real(kind=kind_c3_dbl) :: lambda
 
       !+---+-----------------------------------------------------------------+
       !..Table of lookup values of radiative effective radius of ice crystals
@@ -5275,7 +5282,7 @@ module module_cu_c3
       !.. and coauthors.
       !+---+-----------------------------------------------------------------+
 
-      real, dimension(95), parameter:: retab = (/                       &
+      real(kind=kind_c3), dimension(95), parameter:: retab = (/                       &
          5.92779, 6.26422, 6.61973, 6.99539, 7.39234,                   &
          7.81177, 8.25496, 8.72323, 9.21800, 9.74075, 10.2930,          &
          10.8765, 11.4929, 12.1440, 12.8317, 13.5581, 14.2319,          &
@@ -5338,14 +5345,14 @@ module module_cu_c3
    !+---+-----------------------------------------------------------------+
    !+---+-----------------------------------------------------------------+
 
-   elemental real function makeDropletNumber (Q_cloud, qnwfa)
+   elemental real(kind=kind_c3) function makeDropletNumber (Q_cloud, qnwfa)
 
       implicit none
-      real, intent(in):: q_cloud, qnwfa
-      real, parameter:: am_r = c_pi*1000./6.
-      real, dimension(15), parameter:: g_ratio = (/24,60,120,210,336,   &
+      real(kind=kind_c3), intent(in):: q_cloud, qnwfa
+      real(kind=kind_c3), parameter:: am_r = c_pi*1000./6.
+      real(kind=kind_c3), dimension(15), parameter:: g_ratio = (/24,60,120,210,336,   &
          504,720,990,1320,1716,2184,2730,3360,4080,4896/)
-      double precision:: lambda, qnc
+      real(kind=kind_c3_dbl) :: lambda, qnc
       real:: q_nwfa, x1, xDc
       integer:: nu_c
 
@@ -5372,13 +5379,13 @@ module module_cu_c3
    !+---+-----------------------------------------------------------------+
    !+---+-----------------------------------------------------------------+
 
-   elemental real function make_RainNumber (Q_rain, temp)
+   elemental real(kind=kind_c3) function make_RainNumber (Q_rain, temp)
 
       implicit none
 
-      real, intent(in):: q_rain, temp
-      double precision:: lambda, n0, qnr
-      real, parameter:: am_r = c_pi*1000./6.
+      real(kind=kind_c3), intent(in):: q_rain, temp
+      real(kind=kind_c3_dbl) :: lambda, n0, qnr
+      real(kind=kind_c3), parameter:: am_r = c_pi*1000./6.
 
       if (Q_rain == 0) then
          make_RainNumber = 0
@@ -5409,12 +5416,12 @@ module module_cu_c3
       return
    end function make_RainNumber
    !------------------------------------------------------------------------------------
-   real function coldPoolStart(CNV_TR)
+   real(kind=kind_c3) function coldPoolStart(CNV_TR)
       implicit none
-      real,intent(in)  :: CNV_TR
-      real             :: f1
-      real, parameter  :: p_reduction_factor =  0.3 
-      real, parameter  :: p_limiar = 1000.
+      real(kind=kind_c3),intent(in)  :: CNV_TR
+      real(kind=kind_c3)             :: f1
+      real(kind=kind_c3), parameter  :: p_reduction_factor =  0.3 
+      real(kind=kind_c3), parameter  :: p_limiar = 1000.
    
       f1= min (mx_buoy2,CNV_TR)
       !--- f1 > 1000 => coldPoolStart ---> 1.0 
@@ -5431,21 +5438,21 @@ module module_cu_c3
          character*(*)            ,intent(in)    :: cumulus
          integer                  ,intent(in)    :: itf,ktf, its,ite, kts,kte
          integer, dimension(:)    ,intent(in)    :: ierr,kbcon,ktop
-         real,    dimension(:)    ,intent(inout) :: xland,edto,pre,xmb,sig
+         real(kind=kind_c3),    dimension(:)    ,intent(inout) :: xland,edto,pre,xmb,sig
 
-         real,    dimension(:,:)  ,intent(in)    :: po_cup,tn,qo,pwo,pwdo,qeso
-         real,    dimension(:,:)  ,intent(inout) :: outt,outq,outbuoy
-         real,                     intent(in)    :: dtime 
-         real,    dimension(:)    ,intent(inout) :: rntot,delqev,delq2,qevap,rn&
+         real(kind=kind_c3),    dimension(:,:)  ,intent(in)    :: po_cup,tn,qo,pwo,pwdo,qeso
+         real(kind=kind_c3),    dimension(:,:)  ,intent(inout) :: outt,outq,outbuoy
+         real(kind=kind_c3),                     intent(in)    :: dtime 
+         real(kind=kind_c3),    dimension(:)    ,intent(inout) :: rntot,delqev,delq2,qevap,rn&
                                                    ,qcond, rainevap
 
          logical,    dimension(its:ite)  :: flg
          integer :: i,k,vtp_index
-         real :: dp, t1,q1, rain,evef
-         real, parameter :: elocp=c_alvl/c_cp
-         real, parameter :: el2orc=c_alvl*c_alvl/(c_rm*c_cp)
-         real, parameter :: evfact=0.25 ! .4
-         real, parameter :: evfactl=0.25 ! .2
+         real(kind=kind_c3) :: dp, t1,q1, rain,evef
+         real(kind=kind_c3), parameter :: elocp=c_alvl/c_cp
+         real(kind=kind_c3), parameter :: el2orc=c_alvl*c_alvl/(c_rm*c_cp)
+         real(kind=kind_c3), parameter :: evfact=0.25 ! .4
+         real(kind=kind_c3), parameter :: evfactl=0.25 ! .2
 
          if(cumulus == 'shallow') return 
          rntot (:) = 0.
@@ -5518,23 +5525,23 @@ module module_cu_c3
       ! Variables (input, output, inout)
       integer, intent(in) :: its, itf, kts, kte, ktf
       character*(*), intent (in) :: cumulus
-      real, intent(inout) :: ztexec(:)
-      real, intent(inout) :: zqexec(:)
-      real, intent(in)    :: xland(:)
-      real, intent(in)    :: po(:,:)
-      real, intent(in)    :: buoy_exc(:,:)
+      real(kind=kind_c3), intent(inout) :: ztexec(:)
+      real(kind=kind_c3), intent(inout) :: zqexec(:)
+      real(kind=kind_c3), intent(in)    :: xland(:)
+      real(kind=kind_c3), intent(in)    :: po(:,:)
+      real(kind=kind_c3), intent(in)    :: buoy_exc(:,:)
 
       integer, intent(inout) :: ierr(:)
 
-      real, intent(inout) :: cap_max(:)
-      real, intent(inout) :: wlpool(:)
-      real, intent(out)   :: x_add_buoy(:)
-      real, intent(inout) :: min_entr_rate
-      real, intent(inout) :: entr_rate(:)
+      real(kind=kind_c3), intent(inout) :: cap_max(:)
+      real(kind=kind_c3), intent(inout) :: wlpool(:)
+      real(kind=kind_c3), intent(out)   :: x_add_buoy(:)
+      real(kind=kind_c3), intent(inout) :: min_entr_rate
+      real(kind=kind_c3), intent(inout) :: entr_rate(:)
       
       ! Local variables:
       integer :: i, vtp_index
-      real    :: local_ave_layer
+      real(kind=kind_c3)    :: local_ave_layer
 
       if(USE_MEMORY >= 0) then 
         !local_ave_layer = ave_layer 
@@ -5576,10 +5583,10 @@ module module_cu_c3
       character*(*), intent (in)                   :: cumulus
       character*(*), intent (inout), dimension(:)  :: ierrc
       integer  ,intent (in   )                 :: itf,ktf, its,ite, kts,kte
-      real     ,intent (inout)                 :: z_detr,zkbmax,depth_min
+      real(kind=kind_c3)     ,intent (inout)                 :: z_detr,zkbmax,depth_min
       integer  ,intent (inout), dimension(:)   :: ierr
-      real     ,intent (in   ), dimension(:)   :: z1
-      real     ,intent (in   ), dimension(:,:) :: zo_cup,heo_cup
+      real(kind=kind_c3)     ,intent (in   ), dimension(:)   :: z1
+      real(kind=kind_c3)     ,intent (in   ), dimension(:,:) :: zo_cup,heo_cup
 
       integer  ,intent (out  ), dimension(:)   :: kbmax,kdet,k22,kstabm
       
@@ -5664,9 +5671,9 @@ module module_cu_c3
       implicit none
       character*(*), intent (in)             :: cumulus
       integer  ,intent (in )                 :: itf,ktf, its,ite, kts,kte
-      real     ,intent (in )                 :: MAX_EDT_OCEAN,MAX_EDT_LAND,c0_mid
-      real     ,intent (in ), dimension(:)   :: xland
-      real     ,intent (out), dimension(:)   :: edtmin,edtmax
+      real(kind=kind_c3)     ,intent (in )                 :: MAX_EDT_OCEAN,MAX_EDT_LAND,c0_mid
+      real(kind=kind_c3)     ,intent (in ), dimension(:)   :: xland
+      real(kind=kind_c3)     ,intent (out), dimension(:)   :: edtmin,edtmax
      
       !-local vars
       integer :: i,k
@@ -5711,13 +5718,13 @@ module module_cu_c3
       integer  ,intent (in )                 :: itf,ktf, its,ite, kts,kte
       integer  ,intent (in )                 :: convection_tracer, use_memory
       integer  ,intent (in ), dimension(:)   :: k22,ierr
-      real     ,intent (in )                 :: ave_layer
-      real     ,intent (in ), dimension(:)   :: xland,x_add_buoy,zqexec,ztexec
-      real     ,intent (in ), dimension(:,:) :: t_cup,p_cup,z_cup,po,q_cup
+      real(kind=kind_c3)     ,intent (in )                 :: ave_layer
+      real(kind=kind_c3)     ,intent (in ), dimension(:)   :: xland,x_add_buoy,zqexec,ztexec
+      real(kind=kind_c3)     ,intent (in ), dimension(:,:) :: t_cup,p_cup,z_cup,po,q_cup
 
       integer  ,intent (out), dimension(:)   :: klcl
 
-      real :: tlll,plll,rlll,tlcl,plcl,dzlcl,zlll,x_add
+      real(kind=kind_c3) :: tlll,plll,rlll,tlcl,plcl,dzlcl,zlll,x_add
       integer :: i,k,vtp_index
 
       !--default value
@@ -5770,13 +5777,13 @@ module module_cu_c3
       implicit none
       character *(*)   ,intent (in) :: cumulus
       integer,intent(in)            :: kts,kte,ktf,k22
-      real   ,intent(in)            :: array(:),po(:),xland,ave_layer
-      real   ,optional ,intent(in)  :: add
-      real   ,intent(out)           :: x_aver
+      real(kind=kind_c3)   ,intent(in)            :: array(:),po(:),xland,ave_layer
+      real(kind=kind_c3)   ,optional ,intent(in)  :: add
+      real(kind=kind_c3)   ,intent(out)           :: x_aver
       !-- local vars
       integer                       :: i,local_order_aver,order_aver, i_beg,i_end,ic
-      real,    parameter            :: frac_ave_layer_ocean= 1.0
-      real                          :: count,dp,dp_layer,effec_frac,x_ave_layer
+      real(kind=kind_c3),    parameter            :: frac_ave_layer_ocean= 1.0
+      real(kind=kind_c3)                          :: count,dp,dp_layer,effec_frac,x_ave_layer
 
       if(ave_from_surface) then
             x_ave_layer = ave_layer
@@ -5828,15 +5835,15 @@ module module_cu_c3
       character*(*), intent (in)             :: cumulus
       integer  ,intent (in )                 :: itf,ktf, its,ite, kts,kte
       integer  ,intent (in ), dimension(:)   :: k22,ierr,kpbl
-      real     ,intent (in )                 :: ave_layer
-      real     ,intent (in ), dimension(:)   :: xland,zqexec,ztexec,psur
-      real     ,intent (in ), dimension(:,:) :: t_cup,p_cup,z_cup,po,q_cup
+      real(kind=kind_c3)     ,intent (in )                 :: ave_layer
+      real(kind=kind_c3)     ,intent (in ), dimension(:)   :: xland,zqexec,ztexec,psur
+      real(kind=kind_c3)     ,intent (in ), dimension(:,:) :: t_cup,p_cup,z_cup,po,q_cup
 
       integer  ,intent (out   ), dimension(:) :: klcl
-      real     ,intent (inout ), dimension(:) :: zlcl_sfc
+      real(kind=kind_c3)     ,intent (inout ), dimension(:) :: zlcl_sfc
 
 
-      real :: tlll,plll,rlll,tlcl,plcl,dzlcl,zlll,x_add,local_ave_layer,fr=0.
+      real(kind=kind_c3) :: tlll,plll,rlll,tlcl,plcl,dzlcl,zlll,x_add,local_ave_layer,fr=0.
       integer :: i,k,vtp_index,k_beg
 
       ave_from_surface = .true. 
@@ -5894,13 +5901,13 @@ module module_cu_c3
       implicit none
       character *(*)   ,intent (in)          :: cumulus  
       integer  ,intent (in   )               :: its,ite,itf,kts,kte,ktf
-      real     ,intent (in   )               :: min_entr_rate
-      real     ,intent (in   ), dimension(:) :: zlcl_sfc
-      real     ,intent (in   ), dimension(:,:) :: turb_len_scale
-      real     ,intent (inout), dimension(:)   :: entr_rate
+      real(kind=kind_c3)     ,intent (in   )               :: min_entr_rate
+      real(kind=kind_c3)     ,intent (in   ), dimension(:) :: zlcl_sfc
+      real(kind=kind_c3)     ,intent (in   ), dimension(:,:) :: turb_len_scale
+      real(kind=kind_c3)     ,intent (inout), dimension(:)   :: entr_rate
       !-- local vars
       integer         :: i
-      real            :: k_lcl_entr,k_tls_entr,ax,bx,ax_lcl,ax_tls,tls_max
+      real(kind=kind_c3)            :: k_lcl_entr,k_tls_entr,ax,bx,ax_lcl,ax_tls,tls_max
       bx = 1.0
 
       ax_tls = 1.0 ! 1 for NN, 0.5 MY
@@ -5941,17 +5948,17 @@ module module_cu_c3
       character *(*)   ,intent (in) :: cumulus  
       integer  ,intent (in )                 :: its,ite,itf,kts,kte,ktf
       integer  ,intent (in ), dimension(:)   :: ierr, klcl
-      real     ,intent (in )                 :: min_entr_rate
-      real     ,intent (in ), dimension(:)   :: entr_rate
-      real     ,intent (in ), dimension(:,:) :: qo_cup, qeso_cup,cnvcf,zo_cup
+      real(kind=kind_c3)     ,intent (in )                 :: min_entr_rate
+      real(kind=kind_c3)     ,intent (in ), dimension(:)   :: entr_rate
+      real(kind=kind_c3)     ,intent (in ), dimension(:,:) :: qo_cup, qeso_cup,cnvcf,zo_cup
 
-      real     ,intent (out), dimension(:)   :: mentrd_rate
-      real     ,intent (out), dimension(:,:) :: entr_rate_2d ,cd, cdd
+      real(kind=kind_c3)     ,intent (out), dimension(:)   :: mentrd_rate
+      real(kind=kind_c3)     ,intent (out), dimension(:,:) :: entr_rate_2d ,cd, cdd
 
       !-- local vars
       integer :: i,k,vtp_index
-      real    :: crh1 = 1.3, crh2 = 1.6 , fq = 1.0
-      real, dimension(kts:kte,its:ite) :: rh2d,entr_frh2d,detr_frh2d
+      real(kind=kind_c3)    :: crh1 = 1.3, crh2 = 1.6 , fq = 1.0
+      real(kind=kind_c3), dimension(kts:kte,its:ite) :: rh2d,entr_frh2d,detr_frh2d
 
       do i=its,itf
         entr_rate_2d(:,i) = entr_rate  (i)
@@ -6041,10 +6048,10 @@ module module_cu_c3
       integer  ,intent (in )                 :: itf,ktf, its,ite, kts,kte
       integer  ,intent (in )                 :: use_scale_dep,downdraft
       integer  ,intent (in ), dimension(:)   :: ierr
-      real     ,intent (in )                 :: sig_factor
-      real     ,intent (in ), dimension(:)   :: stochastic_sig,dx
+      real(kind=kind_c3)     ,intent (in )                 :: sig_factor
+      real(kind=kind_c3)     ,intent (in ), dimension(:)   :: stochastic_sig,dx
 
-      real     ,intent (out), dimension(:)   :: sig,sigd
+      real(kind=kind_c3)     ,intent (out), dimension(:)   :: sig,sigd
 
       !-- local vars
       integer :: i,k,vtp_index
@@ -6082,15 +6089,15 @@ module module_cu_c3
       integer  ,intent (in )                 :: itf,ktf, its,ite, kts,kte,mid,shal
       integer  ,intent (inout), dimension(:) :: ierr,kbcon
       integer  ,intent (inout), dimension(:) :: ktop
-      real     ,intent (in   ), dimension(:) :: psur
-      real     ,intent (in   ), dimension(:,:) :: tn_cup, zo_cup, po_cup
-      real     ,intent (in   )               :: min_cloud_depth
+      real(kind=kind_c3)     ,intent (in   ), dimension(:) :: psur
+      real(kind=kind_c3)     ,intent (in   ), dimension(:,:) :: tn_cup, zo_cup, po_cup
+      real(kind=kind_c3)     ,intent (in   )               :: min_cloud_depth
 
       !-- local vars
      integer :: i,k,vtp_index
-     real :: min_deep_top, min_shall_top, cloud_depth    
+     real(kind=kind_c3) :: min_deep_top, min_shall_top, cloud_depth    
      integer, dimension (kts:kte,its:ite) ::  k_inv_layers
-     real,    dimension (kts:kte,its:ite) ::  dtempdz
+     real(kind=kind_c3),    dimension (kts:kte,its:ite) ::  dtempdz
     
 
       if(cumulus == 'deep') return
@@ -6183,17 +6190,17 @@ module module_cu_c3
       integer,                  intent (in )  :: itf,ktf,its,ite,kts,kte,mid,shal
       character *(*),           intent (in )  :: cumulus
       integer, dimension (:)  , intent (inout):: ierr
-      real,    dimension (:)  , intent (in )  :: psur
-      real,    dimension (:,:), intent (in )  :: po_cup,to_cup,zo_cup
-      real,    dimension (:,:), intent (out)  :: dtempdz
+      real(kind=kind_c3),    dimension (:)  , intent (in )  :: psur
+      real(kind=kind_c3),    dimension (:,:), intent (in )  :: po_cup,to_cup,zo_cup
+      real(kind=kind_c3),    dimension (:,:), intent (out)  :: dtempdz
       integer, dimension (:,:), intent (out)  :: k_inv_layers
       ! -- local vars
       integer, parameter :: ist = 3
-      real :: dzm,delp
+      real(kind=kind_c3) :: dzm,delp
       integer:: i,k,ilev,kk,k1,ix,k800,k550,vtp_index
       integer, parameter :: extralayer = 0 !- makes plume top higher
       integer, dimension (kts:kte,its:ite)  :: local_k_inv_layers
-      real   , dimension (kts:kte)          :: first_deriv,sec_deriv,distance
+      real(kind=kind_c3)   , dimension (kts:kte)          :: first_deriv,sec_deriv,distance
       
       !-initialize k_inv_layers as 1 (non-existent layer)_
       k_inv_layers= 1 !integer
@@ -6308,7 +6315,7 @@ module module_cu_c3
       enddo
 
    contains
-      real function deriv3(vtp_index,xx, xi, yi, ni, m,ierr)
+      real(kind=kind_c3) function deriv3(vtp_index,xx, xi, yi, ni, m,ierr)
          !====================================================================
          ! Evaluate first- or second-order derivatives
          ! using three-point Lagrange interpolation
@@ -6326,9 +6333,9 @@ module module_cu_c3
 
          implicit none
          integer, parameter :: n=3
-         real   , intent(in):: xx
+         real(kind=kind_c3)   , intent(in):: xx
          integer, intent(in):: ni, m,vtp_index
-         real   , intent(in) :: xi(ni), yi(ni)
+         real(kind=kind_c3)   , intent(in) :: xi(ni), yi(ni)
          real:: x(n), f(n)
          integer i, j, k, ix
          integer, intent(inout) :: ierr
@@ -6402,16 +6409,16 @@ module module_cu_c3
       character*(*), intent (in)               :: cumulus
       integer  ,intent (in   )                 :: itf,ktf, its,ite, kts,kte
       integer  ,intent (in   ), dimension(:)   :: ierr,start_level,ktop,k22
-      real     ,intent (in   )                 :: ave_layer
-      real     ,intent (in   ), dimension(:)   :: zqexec,ztexec,x_add_buoy,xland
-      real     ,intent (in   ), dimension(:,:) :: zu,zuo,up_massentro,up_massdetro,heso_cup,heo &
+      real(kind=kind_c3)     ,intent (in   )                 :: ave_layer
+      real(kind=kind_c3)     ,intent (in   ), dimension(:)   :: zqexec,ztexec,x_add_buoy,xland
+      real(kind=kind_c3)     ,intent (in   ), dimension(:,:) :: zu,zuo,up_massentro,up_massdetro,heso_cup,heo &
                                                  ,po,heo_cup,cnvcf,heso
-      real     ,intent (inout), dimension(:)   :: hkbo
-      real     ,intent (out  ), dimension(:,:) :: hco
+      real(kind=kind_c3)     ,intent (inout), dimension(:)   :: hkbo
+      real(kind=kind_c3)     ,intent (out  ), dimension(:,:) :: hco
       !-- local vars
       integer :: i,k,vtp_index,kii,kff
-      real :: denom,x_add
-      real, dimension(kts:kte) :: h_env_eff
+      real(kind=kind_c3) :: denom,x_add
+      real(kind=kind_c3), dimension(kts:kte) :: h_env_eff
 
       !
       !--- 1st guess for moist static energy and dbyo (not including ice phase)
@@ -6457,19 +6464,19 @@ module module_cu_c3
       character*(*), intent (in)             :: cumulus
       integer  ,intent (in )                 :: itf,ktf, its,ite, kts,kte,use_linear_subcl_mf
       integer  ,intent (in ), dimension(:)   :: ierr,start_level,ktop,k22
-      real     ,intent (in )                 :: ave_layer, pgcon
-      real     ,intent (in ), dimension(:)   :: zqexec,ztexec,x_add_buoy,xland
-      real     ,intent (in ), dimension(:,:) :: up_massentro,up_massdetro,up_massdetru,up_massentru
+      real(kind=kind_c3)     ,intent (in )                 :: ave_layer, pgcon
+      real(kind=kind_c3)     ,intent (in ), dimension(:)   :: zqexec,ztexec,x_add_buoy,xland
+      real(kind=kind_c3)     ,intent (in ), dimension(:,:) :: up_massentro,up_massdetro,up_massdetru,up_massentru
 
-      real     ,intent (in ), dimension(:,:) :: po,u_cup,v_cup,he,heo,he_cup,heo_cup,heso_cup,hes_cup&
+      real(kind=kind_c3)     ,intent (in ), dimension(:,:) :: po,u_cup,v_cup,he,heo,he_cup,heo_cup,heso_cup,hes_cup&
                                                ,p_liq_ice,qrco,us,vs,cnvcf,hes,heso
 
-      real     ,intent (inout), dimension(:)   :: hkb,hkbo
-      real     ,intent (inout), dimension(:,:) :: zuo,hc,uc,vc,hco
+      real(kind=kind_c3)     ,intent (inout), dimension(:)   :: hkb,hkbo
+      real(kind=kind_c3)     ,intent (inout), dimension(:,:) :: zuo,hc,uc,vc,hco
       !-- local vars
       integer :: i,k,vtp_index,kii,kff
-      real    :: denom,denomU,x_add
-      real, dimension(kts:kte) :: h_env_eff, h_env_effo
+      real(kind=kind_c3)    :: denom,denomU,x_add
+      real(kind=kind_c3), dimension(kts:kte) :: h_env_eff, h_env_effo
 
       !
       !-- updraft moist static energy + momentum budget
@@ -6559,11 +6566,11 @@ module module_cu_c3
       implicit none
       character *(*)   ,intent (in) :: cumulus
       integer,intent(in)            :: kts,kte,ktf,subcl_level
-      real   ,intent(in)            :: ain(kts:kte),po(kts:kte),xland
-      real   ,intent(inout)         :: aout(kts:kte)
+      real(kind=kind_c3)   ,intent(in)            :: ain(kts:kte),po(kts:kte),xland
+      real(kind=kind_c3)   ,intent(inout)         :: aout(kts:kte)
 
       !-- local var
-      real :: x1,x2,dp,del,qc
+      real(kind=kind_c3) :: x1,x2,dp,del,qc
       integer :: k
 
       !-
@@ -6593,19 +6600,19 @@ module module_cu_c3
       character*(*), intent (in)             :: cumulus
       integer  ,intent (in )                 :: itf,ktf, its,ite, kts,kte,use_wetbulb
       integer  ,intent (in ), dimension(:)   :: jmin
-      real     ,intent (in )                 :: ave_layer, pgcon
-      real     ,intent (in ), dimension(:)   :: t_wetbulb,q_wetbulb
-      real     ,intent (in ), dimension(:,:) :: hc,heo,heso_cup,u_cup,v_cup,us,vs,zo_cup,zdo&
+      real(kind=kind_c3)     ,intent (in )                 :: ave_layer, pgcon
+      real(kind=kind_c3)     ,intent (in ), dimension(:)   :: t_wetbulb,q_wetbulb
+      real(kind=kind_c3)     ,intent (in ), dimension(:,:) :: hc,heo,heso_cup,u_cup,v_cup,us,vs,zo_cup,zdo&
                                                ,dd_massdetro,dd_massentro       &
                                                ,dd_massdetru,dd_massentru       
      
       character*(*), intent (inout), dimension(:)  :: ierrc
       integer  ,intent (inout), dimension(:)   :: ierr      
-      real     ,intent (inout), dimension(:)   :: bud
-      real     ,intent (inout), dimension(:,:) :: hcdo,ucd,vcd,dbydo
+      real(kind=kind_c3)     ,intent (inout), dimension(:)   :: bud
+      real(kind=kind_c3)     ,intent (inout), dimension(:,:) :: hcdo,ucd,vcd,dbydo
       !-- local vars
       integer :: i,ki,i_wb,vtp_index
-      real :: denom,denomU,dzo
+      real(kind=kind_c3) :: denom,denomU,dzo
       !
       !--- downdraft moist static energy and momentum
       !
@@ -6663,12 +6670,12 @@ module module_cu_c3
       implicit none
       integer  ,intent (in)                 :: itf,ktf, its,ite, kts,kte
       integer  ,intent (in), dimension(:)   :: ierr, ktop    
-      real     ,intent (in), dimension(:)   :: edto
-      real     ,intent (in), dimension(:,:) :: zo,zuo,zdo,dd_massdetro,dd_massentro &
+      real(kind=kind_c3)     ,intent (in), dimension(:)   :: edto
+      real(kind=kind_c3)     ,intent (in), dimension(:,:) :: zo,zuo,zdo,dd_massdetro,dd_massentro &
                                               ,up_massentro,up_massdetro
       !-- local vars
       integer :: i,k,vtp_index
-      real    :: detupk,subin,subdown,detdo,entdo,entup,detup,entupk,entdoj&
+      real(kind=kind_c3)    :: detupk,subin,subdown,detdo,entdo,entup,detup,entupk,entdoj&
                 ,totmas
 
       !-- only for debug
@@ -6717,15 +6724,15 @@ module module_cu_c3
       character*(*), intent (in)               :: cumulus
       integer  ,intent (in )                   :: itf,ktf, its,ite, kts,kte, use_smooth_tend
       integer  ,intent (in )  , dimension(:)   :: ierr,ktop
-      real     ,intent (in )  , dimension(:,:) :: po_cup
-      real     ,intent (inout), dimension(:,:) :: dellu, dellv, dellah, dellat &
+      real(kind=kind_c3)     ,intent (in )  , dimension(:,:) :: po_cup
+      real(kind=kind_c3)     ,intent (inout), dimension(:,:) :: dellu, dellv, dellah, dellat &
                                                 , dellaq, dellaqc              &
                                                 , subten_Q, subten_H, subten_U, subten_V
       !-- local vars
       integer :: i,k,kk,vtp_index
-      real    :: dp, rcount
-      real,    dimension (kts:kte,5)       ::  tend2d
-      real,    dimension (5)               ::  tend1d
+      real(kind=kind_c3)    :: dp, rcount
+      real(kind=kind_c3),    dimension (kts:kte,5)       ::  tend2d
+      real(kind=kind_c3),    dimension (5)               ::  tend1d
 
       do vtp_index = get_num_elements(vec_ok),1,-1
                i = get_data_value(vec_ok,vtp_index)
@@ -6793,13 +6800,13 @@ module module_cu_c3
       integer  ,intent (in )                 :: itf,ktf, its,ite, kts,kte
      
       integer  ,intent (in ), dimension(:)   :: ierr
-      real     ,intent (in ), dimension(:)   :: mbdt
-      real     ,intent (in ), dimension(:,:) :: heo,qo,tn,p_liq_ice,dellu   &
+      real(kind=kind_c3)     ,intent (in ), dimension(:)   :: mbdt
+      real(kind=kind_c3)     ,intent (in ), dimension(:,:) :: heo,qo,tn,p_liq_ice,dellu   &
                                                ,dellv, dellah, subten_h, subten_q
 
-      real     ,intent (inout), dimension(:,:) :: dellaqc, dellaq 
+      real(kind=kind_c3)     ,intent (inout), dimension(:,:) :: dellaqc, dellaq 
 
-       real    ,intent (out  ), dimension(:,:) :: dellat,subten_t,xhe,xq,xt
+       real(kind=kind_c3)    ,intent (out  ), dimension(:,:) :: dellat,subten_t,xhe,xq,xt
 
       !-- local vars
       integer :: i,k,vtp_index
@@ -6850,24 +6857,24 @@ module module_cu_c3
       integer  ,intent (in )                 :: vert_discr,use_fct
       integer  ,intent (in ), dimension(:)   :: ierr,ktop
    
-      real     ,intent (in )                 :: alp1,dtime
-      real     ,intent (in ), dimension(:)   :: edto 
-      real     ,intent (in ), dimension(:,:) :: po_cup,hco,heo,heo_cup,hcdo,qo,qco,qrco,qrcdo &
+      real(kind=kind_c3)     ,intent (in )                 :: alp1,dtime
+      real(kind=kind_c3)     ,intent (in ), dimension(:)   :: edto 
+      real(kind=kind_c3)     ,intent (in ), dimension(:,:) :: po_cup,hco,heo,heo_cup,hcdo,qo,qco,qrco,qrcdo &
                                                ,qo_cup,qcdo,pwo,pwdo,p_liq_ice,melting,dbydo  &
                                                ,us,vs,uc,vc,u_cup,v_cup,ucd,vcd               &
                                                ,zuo,zdo,zenv,dd_massdetro,dd_massentro        &
                                                ,up_massentro,up_massdetro   
       
-      real     ,intent (out ), dimension(:,:) :: dellu, dellv, dellah, dellat, dellaq, dellaqc &
+      real(kind=kind_c3)     ,intent (out ), dimension(:,:) :: dellu, dellv, dellah, dellat, dellaq, dellaqc &
                                                 ,dellabuoy, subten_H, subten_Q, subten_T       &
                                                 ,subten_U, subten_V 
 
       !-- local vars
       integer :: i,k,vtp_index
-      real :: trash,trash2,dp, C_up, E_dn,G_rain,dtime_max,detup,beta1,alp0
-      real, dimension (kts:kte)             ::  aa,bb,cc,ddu,ddv,ddh,ddq,fp,fm
-      real, dimension (kts:kte,its:ite)     ::  massflx
-      real, dimension (kts:kte,1)           ::  trcflx_in,sub_tend
+      real(kind=kind_c3) :: trash,trash2,dp, C_up, E_dn,G_rain,dtime_max,detup,beta1,alp0
+      real(kind=kind_c3), dimension (kts:kte)             ::  aa,bb,cc,ddu,ddv,ddh,ddq,fp,fm
+      real(kind=kind_c3), dimension (kts:kte,its:ite)     ::  massflx
+      real(kind=kind_c3), dimension (kts:kte,1)           ::  trcflx_in,sub_tend
       
       !--- change per unit mass that a model cloud would modify the environment
       !
@@ -7297,10 +7304,10 @@ module module_cu_c3
       integer  ,intent (in   ), dimension(:) :: ktop
       integer  ,intent (inout), dimension(:) :: ierr
 
-      real     ,intent (in )                 :: c0_mid
-      real     ,intent (in ), dimension(:)   :: edto
-      real     ,intent (in ), dimension(:,:) :: pwo,pwdo
-      real     ,intent (out), dimension(:,:) :: pr_ens
+      real(kind=kind_c3)     ,intent (in )                 :: c0_mid
+      real(kind=kind_c3)     ,intent (in ), dimension(:)   :: edto
+      real(kind=kind_c3)     ,intent (in ), dimension(:,:) :: pwo,pwdo
+      real(kind=kind_c3)     ,intent (out), dimension(:,:) :: pr_ens
       
       !-- local vars
       integer :: i,k,nens3,vtp_index
@@ -7350,16 +7357,16 @@ module module_cu_c3
       integer  ,intent (in ), dimension(:)     :: ktop
       integer  ,intent (in ), dimension(:)     :: ierr
 
-      real     ,intent (in )                   :: alp1
-      real     ,intent (in ), dimension(:,:)   :: po_cup,zenv
-      real     ,intent (in ), dimension(:,:,:) :: mpql,mpqi,mpcf
-      real     ,intent (out), dimension(:,:,:) :: dellampqi,dellampql,dellampcf
+      real(kind=kind_c3)     ,intent (in )                   :: alp1
+      real(kind=kind_c3)     ,intent (in ), dimension(:,:)   :: po_cup,zenv
+      real(kind=kind_c3)     ,intent (in ), dimension(:,:,:) :: mpql,mpqi,mpcf
+      real(kind=kind_c3)     ,intent (out), dimension(:,:,:) :: dellampqi,dellampql,dellampcf
       
       !-- local vars
       integer :: i,k,kmp,vtp_index
-      real    :: dp,env_mf,env_mf_m,env_mf_p,beta1,beta2,alp0
-      real, dimension (kts:kte)     ::  aa,bb,cc,ddu,ddv,ddh,ddq,fp,fm
-      real, dimension (nmp,kts:kte) ::  dd
+      real(kind=kind_c3)    :: dp,env_mf,env_mf_m,env_mf_p,beta1,beta2,alp0
+      real(kind=kind_c3), dimension (kts:kte)     ::  aa,bb,cc,ddu,ddv,ddh,ddq,fp,fm
+      real(kind=kind_c3), dimension (nmp,kts:kte) ::  dd
 
 
       dellampqi =0.
@@ -7428,13 +7435,13 @@ module module_cu_c3
       integer  ,intent (in ), dimension(:)   :: ierr
       integer  ,intent (out), dimension(:)   :: kzdown
 
-      real     ,intent (out)                 :: zcutdown
-      real     ,intent (in ), dimension(:)   :: z1
-      real     ,intent (in ), dimension(:,:) :: zo_cup
+      real(kind=kind_c3)     ,intent (out)                 :: zcutdown
+      real(kind=kind_c3)     ,intent (in ), dimension(:)   :: z1
+      real(kind=kind_c3)     ,intent (in ), dimension(:,:) :: zo_cup
     
       !-- local vars
       integer :: i,k,vtp_index
-      real :: zktop 
+      real(kind=kind_c3) :: zktop 
 
       !--- height(m) above which no downdrafts are allowed to originate
       !
@@ -7591,11 +7598,11 @@ module module_cu_c3
 
    end function initModConvParGF
 !--------------------------------------------------------------------------------------------!
-   real function FractLiqF(temp2) ! temp2 in Kelvin, fraction between 0 and 1.
+   real(kind=kind_c3) function FractLiqF(temp2) ! temp2 in Kelvin, fraction between 0 and 1.
       implicit none
-      real,intent(in)  :: temp2 ! K
-      real             :: temp,ptc
-      real, parameter  :: max_temp = 46. !Celsius
+      real(kind=kind_c3),intent(in)  :: temp2 ! K
+      real(kind=kind_c3)             :: temp,ptc
+      real(kind=kind_c3), parameter  :: max_temp = 46. !Celsius
       select case(FRAC_MODIS)
 
          case (1)
@@ -7639,92 +7646,92 @@ module module_cu_c3
          integer, intent(in) :: klcl(:)
          integer, intent(in) :: ktop(:)
 
-         real, intent(in) :: aa1(:)
-         real, intent(in) :: cd(:,:)
-         real, intent(in) :: clfrac(:,:)
-         real, intent(in) :: dby(:,:)
-         real, intent(in) :: dd_massentro(:,:)
-         real, intent(in) :: dd_massdetro(:,:)
-         real, intent(in) :: dellah(:,:)
-         real, intent(in) :: dellaq(:,:)
-         real, intent(in) :: dellaqc(:,:)
-         real, intent(in) :: dtime
-         real, intent(in) :: edto(:)
-         real, intent(in) :: entr_rate_2d(:,:)
-         real, intent(in) :: evap_bcb(:,:)
-         real, intent(in) :: hc(:,:)
-         real, intent(in) :: hco(:,:)
-         real, intent(in) :: he_cup(:,:)
-         real, intent(in) :: heso_cup(:,:)
-         real, intent(in) :: heo_cup(:,:)
-         real, intent(in) :: HKB(:)
-         real, intent(in) :: massf
-         real, intent(in) :: massi
-         real, intent(in) :: melting_layer(:,:)
-         real, intent(in) :: mpcf(:,:,:)
-         real, intent(in) :: mpqi(:,:,:)
-         real, intent(in) :: mpql(:,:,:)
-         real, intent(in) :: out_chem(:,:,:)
-         real, intent(in) :: outmpcf(:,:,:)
-         real, intent(in) :: outmpqi(:,:,:)
-         real, intent(in) :: outmpql(:,:,:)
-         real, intent(in) :: outnice(:,:)
-         real, intent(in) :: outnliq(:,:)
-         real, intent(in) :: outq(:,:)
-         real, intent(in) :: outqc(:,:)
-         real, intent(in) :: outt(:,:)
-         real, intent(in) :: outu(:,:)
-         real, intent(in) :: outv(:,:)
-         real, intent(in) :: p_liq_ice(:,:)
-         real, intent(in) :: po(:,:)
-         real, intent(in) :: po_cup(:,:)
-         real, intent(in) :: pre(:)
-         real, intent(in) :: prec_flx(:,:)
-         real, intent(in) :: pwdo(:,:)
-         real, intent(in) :: pwo(:,:)
-         real, intent(in) :: q_cup(:,:)
-         real, intent(in) :: q_in(:,:)
-         real, intent(in) :: qcdo(:,:)
-         real, intent(in) :: qco(:,:)
-         real, intent(in) :: qeso_cup(:,:)
-         real, intent(in) :: qo_cup(:,:)
-         real, intent(in) :: qo(:,:)
-         real, intent(in) :: qrco(:,:)
-         real, intent(in) :: qrr(:,:)
-         real, intent(in) :: sc_dn_chem(:,:,:)
-         real, intent(in) :: sc_up_chem(:,:,:)
-         real, intent(in) :: se_chem(:,:,:)
-         real, intent(in) :: se_cup_chem(:,:,:)
-         real, intent(in) :: subten_h(:,:)
-         real, intent(in) :: subten_q(:,:)
-         real, intent(in) :: subten_t(:,:)
-         real, intent(in) :: t_cup(:,:)
-         real, intent(in) :: t_in(:,:)
-         real, intent(in) :: tn(:,:)
-         real, intent(in) :: tot_pw_dn_chem(:,:)
-         real, intent(in) :: tot_pw_up_chem(:,:)
-         real, intent(in) :: up_massentro(:,:)
-         real, intent(in) :: up_massdetro(:,:)
-         real, intent(in) :: us(:,:)
+         real(kind=kind_c3), intent(in) :: aa1(:)
+         real(kind=kind_c3), intent(in) :: cd(:,:)
+         real(kind=kind_c3), intent(in) :: clfrac(:,:)
+         real(kind=kind_c3), intent(in) :: dby(:,:)
+         real(kind=kind_c3), intent(in) :: dd_massentro(:,:)
+         real(kind=kind_c3), intent(in) :: dd_massdetro(:,:)
+         real(kind=kind_c3), intent(in) :: dellah(:,:)
+         real(kind=kind_c3), intent(in) :: dellaq(:,:)
+         real(kind=kind_c3), intent(in) :: dellaqc(:,:)
+         real(kind=kind_c3), intent(in) :: dtime
+         real(kind=kind_c3), intent(in) :: edto(:)
+         real(kind=kind_c3), intent(in) :: entr_rate_2d(:,:)
+         real(kind=kind_c3), intent(in) :: evap_bcb(:,:)
+         real(kind=kind_c3), intent(in) :: hc(:,:)
+         real(kind=kind_c3), intent(in) :: hco(:,:)
+         real(kind=kind_c3), intent(in) :: he_cup(:,:)
+         real(kind=kind_c3), intent(in) :: heso_cup(:,:)
+         real(kind=kind_c3), intent(in) :: heo_cup(:,:)
+         real(kind=kind_c3), intent(in) :: HKB(:)
+         real(kind=kind_c3), intent(in) :: massf
+         real(kind=kind_c3), intent(in) :: massi
+         real(kind=kind_c3), intent(in) :: melting_layer(:,:)
+         real(kind=kind_c3), intent(in) :: mpcf(:,:,:)
+         real(kind=kind_c3), intent(in) :: mpqi(:,:,:)
+         real(kind=kind_c3), intent(in) :: mpql(:,:,:)
+         real(kind=kind_c3), intent(in) :: out_chem(:,:,:)
+         real(kind=kind_c3), intent(in) :: outmpcf(:,:,:)
+         real(kind=kind_c3), intent(in) :: outmpqi(:,:,:)
+         real(kind=kind_c3), intent(in) :: outmpql(:,:,:)
+         real(kind=kind_c3), intent(in) :: outnice(:,:)
+         real(kind=kind_c3), intent(in) :: outnliq(:,:)
+         real(kind=kind_c3), intent(in) :: outq(:,:)
+         real(kind=kind_c3), intent(in) :: outqc(:,:)
+         real(kind=kind_c3), intent(in) :: outt(:,:)
+         real(kind=kind_c3), intent(in) :: outu(:,:)
+         real(kind=kind_c3), intent(in) :: outv(:,:)
+         real(kind=kind_c3), intent(in) :: p_liq_ice(:,:)
+         real(kind=kind_c3), intent(in) :: po(:,:)
+         real(kind=kind_c3), intent(in) :: po_cup(:,:)
+         real(kind=kind_c3), intent(in) :: pre(:)
+         real(kind=kind_c3), intent(in) :: prec_flx(:,:)
+         real(kind=kind_c3), intent(in) :: pwdo(:,:)
+         real(kind=kind_c3), intent(in) :: pwo(:,:)
+         real(kind=kind_c3), intent(in) :: q_cup(:,:)
+         real(kind=kind_c3), intent(in) :: q_in(:,:)
+         real(kind=kind_c3), intent(in) :: qcdo(:,:)
+         real(kind=kind_c3), intent(in) :: qco(:,:)
+         real(kind=kind_c3), intent(in) :: qeso_cup(:,:)
+         real(kind=kind_c3), intent(in) :: qo_cup(:,:)
+         real(kind=kind_c3), intent(in) :: qo(:,:)
+         real(kind=kind_c3), intent(in) :: qrco(:,:)
+         real(kind=kind_c3), intent(in) :: qrr(:,:)
+         real(kind=kind_c3), intent(in) :: sc_dn_chem(:,:,:)
+         real(kind=kind_c3), intent(in) :: sc_up_chem(:,:,:)
+         real(kind=kind_c3), intent(in) :: se_chem(:,:,:)
+         real(kind=kind_c3), intent(in) :: se_cup_chem(:,:,:)
+         real(kind=kind_c3), intent(in) :: subten_h(:,:)
+         real(kind=kind_c3), intent(in) :: subten_q(:,:)
+         real(kind=kind_c3), intent(in) :: subten_t(:,:)
+         real(kind=kind_c3), intent(in) :: t_cup(:,:)
+         real(kind=kind_c3), intent(in) :: t_in(:,:)
+         real(kind=kind_c3), intent(in) :: tn(:,:)
+         real(kind=kind_c3), intent(in) :: tot_pw_dn_chem(:,:)
+         real(kind=kind_c3), intent(in) :: tot_pw_up_chem(:,:)
+         real(kind=kind_c3), intent(in) :: up_massentro(:,:)
+         real(kind=kind_c3), intent(in) :: up_massdetro(:,:)
+         real(kind=kind_c3), intent(in) :: us(:,:)
 
-         real, intent(in) :: vvel1d(:)
-         real, intent(in) :: vvel2d(:,:)
-         real, intent(in) :: xmb(:)
-         real, intent(in) :: z_cup(:,:)
-         real, intent(in) :: zdo(:,:)
-         real, intent(in) :: zenv(:,:)
-         real, intent(in) :: zo(:,:)
-         real, intent(in) :: zqexec(:)
-         real, intent(in) :: zuo(:,:)
-         real, intent(in) :: zws(:)
+         real(kind=kind_c3), intent(in) :: vvel1d(:)
+         real(kind=kind_c3), intent(in) :: vvel2d(:,:)
+         real(kind=kind_c3), intent(in) :: xmb(:)
+         real(kind=kind_c3), intent(in) :: z_cup(:,:)
+         real(kind=kind_c3), intent(in) :: zdo(:,:)
+         real(kind=kind_c3), intent(in) :: zenv(:,:)
+         real(kind=kind_c3), intent(in) :: zo(:,:)
+         real(kind=kind_c3), intent(in) :: zqexec(:)
+         real(kind=kind_c3), intent(in) :: zuo(:,:)
+         real(kind=kind_c3), intent(in) :: zws(:)
 
          character(len=*), intent(in) :: cumulus
 
          ! Local variables:
          integer :: i, k, nvar, nvar_begin, kmp
          character :: cty
-         real :: dp, e_dn, c_up, trash, trash2, env_mf
-         real :: resten_h, resten_q, resten_t
+         real(kind=kind_c3) :: dp, e_dn, c_up, trash, trash2, env_mf
+         real(kind=kind_c3) :: resten_h, resten_q, resten_t
 
          if (trim(cumulus) == 'deep') then
             cty = '1'
@@ -7903,12 +7910,12 @@ module module_cu_c3
 
    end subroutine gateSoundings 
    !---------------------------------------------------------------------------------------------------
-   real function satur_spec_hum(pt,press) result(pqsat)
+   real(kind=kind_c3) function satur_spec_hum(pt,press) result(pqsat)
          implicit none
-         real   , intent(in ) :: pt,press ! Kelvin, hPa
+         real(kind=kind_c3)   , intent(in ) :: pt,press ! Kelvin, hPa
          !---locals
-         real :: zew,zqs,zcor,foealfcu,foeewmcu
-         real, parameter ::           &
+         real(kind=kind_c3) :: zew,zqs,zcor,foealfcu,foeewmcu
+         real(kind=kind_c3), parameter ::           &
              c_rd=287.06              &
             ,c_rv=461.52              &
             ,c_rtt=273.16             &
@@ -7961,46 +7968,46 @@ module module_cu_c3
       integer, intent(in) :: ktop(:)
       integer, intent(in) :: start_level(:)
 
-      real, intent(in) :: ave_layer
-      real, intent(in) :: dtime
-      real, intent(in) :: edto(:)
-      real, intent(in) :: fscav(:)
-      real, intent(in) :: po(:,:)
-      real, intent(in) :: po_cup(:,:)
-      real, intent(in) :: pwavo(:)
-      real, intent(in) :: pwevo(:)
-      real, intent(in) :: pwdo(:,:)
-      real, intent(in) :: pwo(:,:)
-      real, intent(in) :: qrco(:,:)
-      real, intent(in) :: tempco(:,:)
-      real, intent(in) :: vvel2d(:,:)
-      real, intent(in) :: xland(:)
-      real, intent(in) :: zdo(:,:)
-      real, intent(in) :: zo_cup(:,:)
-      real, intent(in) :: zuo(:,:)
-      real, intent(out) :: zenv(:,:)
-      real, intent(in) :: dd_massdetro(:,:)
-      real, intent(in) :: dd_massentro(:,:)
-      real, intent(in) :: up_massdetro(:,:)
-      real, intent(in) :: up_massentro(:,:)
+      real(kind=kind_c3), intent(in) :: ave_layer
+      real(kind=kind_c3), intent(in) :: dtime
+      real(kind=kind_c3), intent(in) :: edto(:)
+      real(kind=kind_c3), intent(in) :: fscav(:)
+      real(kind=kind_c3), intent(in) :: po(:,:)
+      real(kind=kind_c3), intent(in) :: po_cup(:,:)
+      real(kind=kind_c3), intent(in) :: pwavo(:)
+      real(kind=kind_c3), intent(in) :: pwevo(:)
+      real(kind=kind_c3), intent(in) :: pwdo(:,:)
+      real(kind=kind_c3), intent(in) :: pwo(:,:)
+      real(kind=kind_c3), intent(in) :: qrco(:,:)
+      real(kind=kind_c3), intent(in) :: tempco(:,:)
+      real(kind=kind_c3), intent(in) :: vvel2d(:,:)
+      real(kind=kind_c3), intent(in) :: xland(:)
+      real(kind=kind_c3), intent(in) :: zdo(:,:)
+      real(kind=kind_c3), intent(in) :: zo_cup(:,:)
+      real(kind=kind_c3), intent(in) :: zuo(:,:)
+      real(kind=kind_c3), intent(out) :: zenv(:,:)
+      real(kind=kind_c3), intent(in) :: dd_massdetro(:,:)
+      real(kind=kind_c3), intent(in) :: dd_massentro(:,:)
+      real(kind=kind_c3), intent(in) :: up_massdetro(:,:)
+      real(kind=kind_c3), intent(in) :: up_massentro(:,:)
 
-      real, intent(inout) :: se_chem(:,:,:)
+      real(kind=kind_c3), intent(inout) :: se_chem(:,:,:)
 
-      real, intent(out) :: massf
-      real, intent(out) :: out_chem(:,:,:)
-      real, intent(out) :: pw_dn_chem(:,:,:)
-      real, intent(out) :: pw_up_chem(:,:,:)
-      real, intent(out) :: sc_dn_chem(:,:,:)
-      real, intent(out) :: sc_up_chem(:,:,:)
-      real, intent(out) :: se_cup_chem(:,:,:)
-      real, intent(out) :: tot_pw_dn_chem(:,:)
-      real, intent(out) :: tot_pw_up_chem(:,:)
+      real(kind=kind_c3), intent(out) :: massf
+      real(kind=kind_c3), intent(out) :: out_chem(:,:,:)
+      real(kind=kind_c3), intent(out) :: pw_dn_chem(:,:,:)
+      real(kind=kind_c3), intent(out) :: pw_up_chem(:,:,:)
+      real(kind=kind_c3), intent(out) :: sc_dn_chem(:,:,:)
+      real(kind=kind_c3), intent(out) :: sc_up_chem(:,:,:)
+      real(kind=kind_c3), intent(out) :: se_cup_chem(:,:,:)
+      real(kind=kind_c3), intent(out) :: tot_pw_dn_chem(:,:)
+      real(kind=kind_c3), intent(out) :: tot_pw_up_chem(:,:)
 
       ! Local variables:
-      real :: se_chem_update(3, its:ite, kts:kte)
-      real :: massi, dp, beta1, evap,wetdep
+      real(kind=kind_c3) :: se_chem_update(3, its:ite, kts:kte)
+      real(kind=kind_c3) :: massi, dp, beta1, evap,wetdep
       integer :: i,  k, vtp_index, ispc
-      real, dimension(mtp) :: evap_, wetdep_, trash_ ,trash2_, residu_
+      real(kind=kind_c3), dimension(mtp) :: evap_, wetdep_, trash_ ,trash2_, residu_
 
 
       !--only for debug
@@ -8132,9 +8139,9 @@ module module_cu_c3
       
       integer, intent(in) :: ierr(:)
 
-      real, intent(in) :: se_chem(:,:,:)
+      real(kind=kind_c3), intent(in) :: se_chem(:,:,:)
 
-      real, intent(out) :: se_cup_chem(:,:,:)
+      real(kind=kind_c3), intent(out) :: se_cup_chem(:,:,:)
 
       !Local variables:
       integer :: i, k
@@ -8168,13 +8175,13 @@ module module_cu_c3
       !Parameters:
       character(len=*), parameter :: procedureName = 'getInCloudScChemUp' ! Subroutine Name
    
-      real, parameter :: p_scav_eff = 0.6  
+      real(kind=kind_c3), parameter :: p_scav_eff = 0.6  
       !! for smoke : Chuang et al. (1992) J. Atmos. Sci.
-      real, parameter :: p_cte_w_upd = 10. 
+      real(kind=kind_c3), parameter :: p_cte_w_upd = 10. 
       !! m/s
-      !    real, parameter :: kc = 5.e-3  
+      !    real(kind=kind_c3), parameter :: kc = 5.e-3  
       !! s-1
-      real, parameter :: p_kc = 2.e-3
+      real(kind=kind_c3), parameter :: p_kc = 2.e-3
       !! autoconversion parameter in GF is lower than what is used in GOCART s-1
 
       !Variables (input, output, inout)
@@ -8185,34 +8192,34 @@ module module_cu_c3
       integer, intent(in) :: k22(:)
       integer, intent(in) :: start_level(:)
 
-      real, intent(in) :: fscav(:)
-      real, intent(in) :: se(:,:,:)
-      real, intent(in) :: se_cup(:,:,:)
-      real, intent(in) :: z_cup(:,:)
-      real, intent(in) :: po_cup(:,:)
-      real, intent(in) :: qrco(:,:)
-      real, intent(in) :: tempco(:,:)
-      real, intent(in) :: pwo(:,:)
-      real, intent(in) :: zuo(:,:)
-      real, intent(in) :: up_massentro(:,:)
-      real, intent(in) :: up_massdetro(:,:)
-      real, intent(in) :: po(:,:)
-      real, intent(in) :: vvel2d(:,:)
-      real, intent(in) :: xland(:)
-      real, intent(in) :: ave_layer
+      real(kind=kind_c3), intent(in) :: fscav(:)
+      real(kind=kind_c3), intent(in) :: se(:,:,:)
+      real(kind=kind_c3), intent(in) :: se_cup(:,:,:)
+      real(kind=kind_c3), intent(in) :: z_cup(:,:)
+      real(kind=kind_c3), intent(in) :: po_cup(:,:)
+      real(kind=kind_c3), intent(in) :: qrco(:,:)
+      real(kind=kind_c3), intent(in) :: tempco(:,:)
+      real(kind=kind_c3), intent(in) :: pwo(:,:)
+      real(kind=kind_c3), intent(in) :: zuo(:,:)
+      real(kind=kind_c3), intent(in) :: up_massentro(:,:)
+      real(kind=kind_c3), intent(in) :: up_massdetro(:,:)
+      real(kind=kind_c3), intent(in) :: po(:,:)
+      real(kind=kind_c3), intent(in) :: vvel2d(:,:)
+      real(kind=kind_c3), intent(in) :: xland(:)
+      real(kind=kind_c3), intent(in) :: ave_layer
 
       character(len=*), intent(in) :: cumulus
 
-      real, intent(out) :: sc_up(:,:,:)
-      real, intent(out) :: pw_up(:,:,:)
-      real, intent(out) :: tot_pw_up_chem(:,:)
+      real(kind=kind_c3), intent(out) :: sc_up(:,:,:)
+      real(kind=kind_c3), intent(out) :: pw_up(:,:,:)
+      real(kind=kind_c3), intent(out) :: tot_pw_up_chem(:,:)
 
       !Local variables:
-      real, dimension(mtp, its:ite) ::  sc_b
-      real, dimension(mtp) :: conc_mxr
-      real :: dz, xzz, xzd, xze, denom, henry_coef, w_upd, fliq, dp
+      real(kind=kind_c3), dimension(mtp, its:ite) ::  sc_b
+      real(kind=kind_c3), dimension(mtp) :: conc_mxr
+      real(kind=kind_c3) :: dz, xzz, xzd, xze, denom, henry_coef, w_upd, fliq, dp
       integer :: i, k, ispc
-      real, dimension(mtp, its:ite, kts:kte) ::  factor_temp
+      real(kind=kind_c3), dimension(mtp, its:ite, kts:kte) ::  factor_temp
       integer :: vtp_index
 
       !--initialization
@@ -8365,25 +8372,25 @@ module module_cu_c3
       integer, intent(in) :: ierr(:)
       integer, intent(in) :: jmin(:)
 
-      real, intent(in) :: se(:,:,:)
-      real, intent(in) :: se_cup(:,:,:)
-      real, intent(in) :: pwavo(:)
-      real, intent(in) :: pwevo(:)
-      real, intent(in) :: po_cup(:,:)
-      real, intent(in) :: pwdo(:,:)
-      real, intent(in) :: zdo(:,:)
-      real, intent(in) :: dd_massentro(:,:)
-      real, intent(in) :: dd_massdetro(:,:)
-      real, intent(in) :: tot_pw_up_chem(:,:)
+      real(kind=kind_c3), intent(in) :: se(:,:,:)
+      real(kind=kind_c3), intent(in) :: se_cup(:,:,:)
+      real(kind=kind_c3), intent(in) :: pwavo(:)
+      real(kind=kind_c3), intent(in) :: pwevo(:)
+      real(kind=kind_c3), intent(in) :: po_cup(:,:)
+      real(kind=kind_c3), intent(in) :: pwdo(:,:)
+      real(kind=kind_c3), intent(in) :: zdo(:,:)
+      real(kind=kind_c3), intent(in) :: dd_massentro(:,:)
+      real(kind=kind_c3), intent(in) :: dd_massdetro(:,:)
+      real(kind=kind_c3), intent(in) :: tot_pw_up_chem(:,:)
 
       character(len=*), intent(in)  :: cumulus
 
-      real, intent(out) :: sc_dn(:,:,:)
-      real, intent(out) :: pw_dn(:,:,:)
-      real, intent(out) :: tot_pw_dn_chem(:,:)
+      real(kind=kind_c3), intent(out) :: sc_dn(:,:,:)
+      real(kind=kind_c3), intent(out) :: pw_dn(:,:,:)
+      real(kind=kind_c3), intent(out) :: tot_pw_dn_chem(:,:)
 
       !Local variables:
-      real :: xzz, xzd, xze, denom, pwdper, frac_evap, dp
+      real(kind=kind_c3) :: xzz, xzd, xze, denom, pwdper, frac_evap, dp
       integer :: i, k, ispc
       integer :: vtp_index
 
@@ -8466,24 +8473,24 @@ module module_cu_c3
       !--- inputs : ak0(ispc), dak(ispc),  hstar(ispc), dhr(ispc)
       implicit none
       integer, intent(in) :: ispc
-      real   , intent(in) :: temp
-      real :: henry_coef
-      real :: fct ,tcorr, corrh
+      real(kind=kind_c3)   , intent(in) :: temp
+      real(kind=kind_c3) :: henry_coef
+      real(kind=kind_c3) :: fct ,tcorr, corrh
 
       !--- define some constants!
-      ! real, parameter:: c_rgas_atm = 8.205e-2 ! atm M^-1 K^-1 ! 8.314 gas constant [J/(mol*K)]
-      ! real, parameter:: c_avogad= 6.022e23! Avogadro constant [1/mol]
-      ! real, parameter:: c_rhoH2O= 999.9668! density of water [kg/m3]
-      ! real, parameter:: c_temp0 = 298.15! standard temperature [K]
-      ! real, parameter:: c_temp0i= 1./298.15! inverse of standard temperature [K]
-      ! real, parameter:: c_MWH2O = 18.02! molecular mass of water [kg/kmol]
-      ! real, parameter:: c_MWAIR = 28.97! effective molecular mass of air [kg/kmol]
-      ! real, parameter:: c_conv3 = c_avogad / 1.0e6!  [mol(g)/m3(air)]  to [molec(g)/cm3(air)]
-      ! real, parameter:: c_conv4 = 100.            !  [m]   to [cm]
-      ! real, parameter:: c_conv5 = 1000.           !  [m^3]      to [l]
-      ! real, parameter:: c_conv7 = 1/c_conv5       !  [l]    to [m^3]
-      ! real, parameter:: c_conv6 = 1. / 101325.    !  [Pa]      to [atm]
-      ! real, parameter:: c_hplus = 1.175e-4        ! for cloud water. pH is assumed to be 3.93: pH=3.93 
+      ! real(kind=kind_c3), parameter:: c_rgas_atm = 8.205e-2 ! atm M^-1 K^-1 ! 8.314 gas constant [J/(mol*K)]
+      ! real(kind=kind_c3), parameter:: c_avogad= 6.022e23! Avogadro constant [1/mol]
+      ! real(kind=kind_c3), parameter:: c_rhoH2O= 999.9668! density of water [kg/m3]
+      ! real(kind=kind_c3), parameter:: c_temp0 = 298.15! standard temperature [K]
+      ! real(kind=kind_c3), parameter:: c_temp0i= 1./298.15! inverse of standard temperature [K]
+      ! real(kind=kind_c3), parameter:: c_MWH2O = 18.02! molecular mass of water [kg/kmol]
+      ! real(kind=kind_c3), parameter:: c_MWAIR = 28.97! effective molecular mass of air [kg/kmol]
+      ! real(kind=kind_c3), parameter:: c_conv3 = c_avogad / 1.0e6!  [mol(g)/m3(air)]  to [molec(g)/cm3(air)]
+      ! real(kind=kind_c3), parameter:: c_conv4 = 100.            !  [m]   to [cm]
+      ! real(kind=kind_c3), parameter:: c_conv5 = 1000.           !  [m^3]      to [l]
+      ! real(kind=kind_c3), parameter:: c_conv7 = 1/c_conv5       !  [l]    to [m^3]
+      ! real(kind=kind_c3), parameter:: c_conv6 = 1. / 101325.    !  [Pa]      to [atm]
+      ! real(kind=kind_c3), parameter:: c_hplus = 1.175e-4        ! for cloud water. pH is assumed to be 3.93: pH=3.93 
       !                                             !  =>hplus=10**(-pH)
 
       ! aqueous-phase concentrations XXXa [mol/m3(air)]!
@@ -8519,33 +8526,33 @@ module module_cu_c3
       integer, intent(in) ::  kte, kts, mtp, ktop
       integer, intent(in) :: chem_name_mask(:)
 
-      real, intent(in) :: dtime
-      real, intent(in) :: edto
-      real, intent(in) :: po_cup(:)
-      real, intent(in) :: pw_dn_chem(:,:)
-      real, intent(in) :: pw_up_chem(:,:)
-      real, intent(in) :: sc_dn_chem(:,:)
-      real, intent(in) :: sc_up_chem(:,:)
-      real, intent(in) :: se_chem(:,:)
-      real, intent(in) :: se_cup_chem(:,:)
-      real, intent(in) :: zo_cup(:)
-      real, intent(in) :: zdo(:)
-      real, intent(in) :: zuo(:)
+      real(kind=kind_c3), intent(in) :: dtime
+      real(kind=kind_c3), intent(in) :: edto
+      real(kind=kind_c3), intent(in) :: po_cup(:)
+      real(kind=kind_c3), intent(in) :: pw_dn_chem(:,:)
+      real(kind=kind_c3), intent(in) :: pw_up_chem(:,:)
+      real(kind=kind_c3), intent(in) :: sc_dn_chem(:,:)
+      real(kind=kind_c3), intent(in) :: sc_up_chem(:,:)
+      real(kind=kind_c3), intent(in) :: se_chem(:,:)
+      real(kind=kind_c3), intent(in) :: se_cup_chem(:,:)
+      real(kind=kind_c3), intent(in) :: zo_cup(:)
+      real(kind=kind_c3), intent(in) :: zdo(:)
+      real(kind=kind_c3), intent(in) :: zuo(:)
 
       character(len=*), intent(in) :: cumulus
 
-      real, intent(inout) :: zenv(:)
+      real(kind=kind_c3), intent(inout) :: zenv(:)
 
-      real, intent(out) :: out_chem(:,:)
+      real(kind=kind_c3), intent(out) :: out_chem(:,:)
 
       ! Local variables:
       integer :: k, ispc, istep, lstep
-      real :: dp, alp0, dtime_max, beta1, wetdep, evap, dz
-      real, dimension(mtp, kts:kte) :: trcflx_in, sub_tend, zenv_diff
-      real, dimension(kts:kte) :: massflx
-      real, dimension(kts:kte) :: aa, bb, cc, fp, fm
-      real, dimension(mtp, kts:kte) :: ddtr, ddtr_upd, fp_mtp, fm_mtp
-      real, dimension(mtp) :: trash_, trash2_, evap_, residu_, wetdep_
+      real(kind=kind_c3) :: dp, alp0, dtime_max, beta1, wetdep, evap, dz
+      real(kind=kind_c3), dimension(mtp, kts:kte) :: trcflx_in, sub_tend, zenv_diff
+      real(kind=kind_c3), dimension(kts:kte) :: massflx
+      real(kind=kind_c3), dimension(kts:kte) :: aa, bb, cc, fp, fm
+      real(kind=kind_c3), dimension(mtp, kts:kte) :: ddtr, ddtr_upd, fp_mtp, fm_mtp
+      real(kind=kind_c3), dimension(mtp) :: trash_, trash2_, evap_, residu_, wetdep_
 
       !- flux form + source/sink terms + time explicit + FCT
       if (USE_FLUX_FORM == 1 .and. ALP1 == 0.) then
@@ -8745,28 +8752,28 @@ module module_cu_c3
           integer  ,intent (in   ) :: itf,ktf,its,ite, kts,kte
           integer  ,intent (in   ) :: maxens3
           integer, dimension (:)      ,intent (in   )  :: k22,kbcon,ktop
-          real,    dimension (:)      ,intent (in   )  :: aa1,xaa0,aa1_bl,wlpool,cin1
-          real,    dimension (:)      ,intent (in   )  :: mbdt,tau_ecmwf,tke_pbl
-          real    ,dimension (:,:)    ,intent (in   )  :: rho
+          real(kind=kind_c3),    dimension (:)      ,intent (in   )  :: aa1,xaa0,aa1_bl,wlpool,cin1
+          real(kind=kind_c3),    dimension (:)      ,intent (in   )  :: mbdt,tau_ecmwf,tke_pbl
+          real(kind=kind_c3)    ,dimension (:,:)    ,intent (in   )  :: rho
 
-          real,    dimension (:)      ,intent (inout)  :: xf_dicycle,xf_coldpool
-          real,    dimension (:,:)    ,intent (out)    :: xff_mid
-          real,    dimension (:,:)    ,intent (out  )  :: xff_shal2d
-          real,    dimension (:,:)    ,intent (out  )  :: xf_ens
+          real(kind=kind_c3),    dimension (:)      ,intent (inout)  :: xf_dicycle,xf_coldpool
+          real(kind=kind_c3),    dimension (:,:)    ,intent (out)    :: xff_mid
+          real(kind=kind_c3),    dimension (:,:)    ,intent (out  )  :: xff_shal2d
+          real(kind=kind_c3),    dimension (:,:)    ,intent (out  )  :: xf_ens
 
           !-- for shallow
-          real    ,dimension (shall_closures)  :: xff_shal
+          real(kind=kind_c3)    ,dimension (shall_closures)  :: xff_shal
           !-- tuning numbers for the TKE-based closure for shallow convection   
-          real,parameter :: p_k1 = 1.2, p_cloud_area = 0.10
+          real(kind=kind_c3),parameter :: p_k1 = 1.2, p_cloud_area = 0.10
           
           !-- for mid
-          real             :: KE_gf,W_cb
-          real, parameter  :: c1 = 0.06, c2 = 1., c3 = 0.28,  c4 = 0.0 !0.64 
+          real(kind=kind_c3)             :: KE_gf,W_cb
+          real(kind=kind_c3), parameter  :: c1 = 0.06, c2 = 1., c3 = 0.28,  c4 = 0.0 !0.64 
           
           !-- for deep
-          real                             :: xff_dicycle
-          real, dimension (1:maxens3)      :: xff_ens3
-          real, dimension (its:ite)        :: xk,xff
+          real(kind=kind_c3)                             :: xff_dicycle
+          real(kind=kind_c3), dimension (1:maxens3)      :: xff_ens3
+          real(kind=kind_c3), dimension (its:ite)        :: xk,xff
 
           integer :: i,k,kbase,vtp_index
 
@@ -8910,8 +8917,8 @@ module module_cu_c3
       subroutine set_Tq_pertub (use_excess,its,ite,itf,xlandi,ztexec,zqexec,cum_ztexec,cum_zqexec)
             implicit none
             integer, intent(in) :: its, ite, itf, use_excess
-            real, dimension(:), intent(in)  :: ztexec,zqexec,xlandi
-            real, dimension(:), intent(out) :: cum_ztexec,cum_zqexec
+            real(kind=kind_c3), dimension(:), intent(in)  :: ztexec,zqexec,xlandi
+            real(kind=kind_c3), dimension(:), intent(out) :: cum_ztexec,cum_zqexec
             integer :: i
             !
             !-- set minimum/max for excess of T and Q
@@ -8946,12 +8953,12 @@ module module_cu_c3
          character*(*), intent (in)             :: cumulus
          integer  ,intent (in )                 :: itf,ktf, its,ite, kts,kte
          integer  ,intent (in )                 :: MOIST_TRIGGER
-         !real     ,intent (out)                 :: cap_max_inc,cap_maxs
-         real     ,intent (out), dimension(:)   :: cap_max_increment,cap_max
+         !real(kind=kind_c3)     ,intent (out)                 :: cap_max_inc,cap_maxs
+         real(kind=kind_c3)     ,intent (out), dimension(:)   :: cap_max_increment,cap_max
 
          !-local vars
          integer :: i,k
-         real    :: cap_max_inc
+         real(kind=kind_c3)    :: cap_max_inc
          !
          !--- maximum depth (mb) of capping inversion (larger cap = no convection)
          if( MOIST_TRIGGER==0) then
@@ -8986,8 +8993,8 @@ module module_cu_c3
          implicit none
          character*(*), intent (in)             :: cumulus
          integer  ,intent (in )                 :: itf,ktf, its,ite, kts,kte
-         real     ,intent (in )                 :: lambau_deep,lambau_shdn,pgcon
-         real     ,intent (out), dimension(:)   :: lambau_dp, lambau_dn
+         real(kind=kind_c3)     ,intent (in )                 :: lambau_deep,lambau_shdn,pgcon
+         real(kind=kind_c3)     ,intent (out), dimension(:)   :: lambau_dp, lambau_dn
          !-local vars
          integer :: i,k
 
@@ -9015,15 +9022,15 @@ module module_cu_c3
       !------------------------------------------------------------------------------------
       subroutine get_interp(q_old,t_old,po_cup,q_new,t_new)
          implicit none
-         real    ,intent (in   ) :: po_cup ! original
-         real    ,intent (inout) :: q_old,t_old,q_new,t_new ! extrapolated
+         real(kind=kind_c3)    ,intent (in   ) :: po_cup ! original
+         real(kind=kind_c3)    ,intent (inout) :: q_old,t_old,q_new,t_new ! extrapolated
 
          !---locals
-         real ::  zqp, zcond1, zcor, zqsat
-         real ::  psp, pt , pq, ptare
-         real ::  foealfcu, foeewmcu,foedemcu,foeldcpmcu
+         real(kind=kind_c3) ::  zqp, zcond1, zcor, zqsat
+         real(kind=kind_c3) ::  psp, pt , pq, ptare
+         real(kind=kind_c3) ::  foealfcu, foeewmcu,foedemcu,foeldcpmcu
          
-         !real, parameter :: &
+         !real(kind=kind_c3), parameter :: &
          !  c_rd=287.06                             &
          ! ,c_rv=461.52                             &
          ! ,c_rcpd=1004.71                          &
@@ -9114,15 +9121,15 @@ module module_cu_c3
 
          implicit none
          integer ,intent (in   ) :: jmin
-         real    ,intent (in   ) :: qo_cup,t_cup,po_cup
-         real    ,intent (inout) :: q_wetbulb,t_wetbulb
+         real(kind=kind_c3)    ,intent (in   ) :: qo_cup,t_cup,po_cup
+         real(kind=kind_c3)    ,intent (inout) :: q_wetbulb,t_wetbulb
 
          !---locals
-         real ::  zqp, zcond, zcond1, zcor, zqsat
-         real :: psp, pt , pq
-         real :: z3es,   z4es, z5alcp, zaldcp
-         real :: ptare, evap
-         real :: foedelta,foeewmcu,foealfcu,foedemcu,foeldcpmcu
+         real(kind=kind_c3) ::  zqp, zcond, zcond1, zcor, zqsat
+         real(kind=kind_c3) :: psp, pt , pq
+         real(kind=kind_c3) :: z3es,   z4es, z5alcp, zaldcp
+         real(kind=kind_c3) :: ptare, evap
+         real(kind=kind_c3) :: foedelta,foeewmcu,foealfcu,foedemcu,foeldcpmcu
 
          !-- for testing
          !              PSP                   TEMP        Q                     ZCOND1
@@ -9221,19 +9228,19 @@ module module_cu_c3
 
          implicit none
          integer,intent(in) :: n,ktop                        ! number of grid cells
-         real   ,intent(in) :: dt                            ! transport time step
-         real   ,intent(in) :: z(n+0)                        ! location of cell interfaces
-         real   ,intent(in) :: tracr(n)                      ! the transported variable
-         real   ,intent(in) :: massflx  (n+0)                ! mass flux across interfaces
-         real   ,intent(in) :: trflx_in (n+0)                ! original tracer flux
-         real   ,intent(out):: del_out  (n+0)                ! modified tracr flux
-         real               :: trflx_out(n+0)                ! modified tracr flux
+         real(kind=kind_c3)   ,intent(in) :: dt                            ! transport time step
+         real(kind=kind_c3)   ,intent(in) :: z(n+0)                        ! location of cell interfaces
+         real(kind=kind_c3)   ,intent(in) :: tracr(n)                      ! the transported variable
+         real(kind=kind_c3)   ,intent(in) :: massflx  (n+0)                ! mass flux across interfaces
+         real(kind=kind_c3)   ,intent(in) :: trflx_in (n+0)                ! original tracer flux
+         real(kind=kind_c3)   ,intent(out):: del_out  (n+0)                ! modified tracr flux
+         real(kind=kind_c3)               :: trflx_out(n+0)                ! modified tracr flux
          integer k,km1,kp1
          logical :: NaN, error=.false., vrbos=.false.
-         real dtovdz(n),trmax(n),trmin(n),flx_lo(n+0),antifx(n+0),clipped(n+0),  &
+         real(kind=kind_c3) dtovdz(n),trmax(n),trmin(n),flx_lo(n+0),antifx(n+0),clipped(n+0),  &
             soln_hi(n),totlin(n),totlout(n),soln_lo(n),clipin(n),clipout(n),arg
-         real,parameter :: epsil=1.e-22           ! prevent division by zero
-         real,parameter :: damp=1.                ! damper of antidff flux (1=no damping)
+         real(kind=kind_c3),parameter :: epsil=1.e-22           ! prevent division by zero
+         real(kind=kind_c3),parameter :: damp=1.                ! damper of antidff flux (1=no damping)
 
          logical, parameter :: hi_order = .false.
 
@@ -9385,12 +9392,12 @@ module module_cu_c3
          !-- an updated "f" at time t+1 is the output
          implicit none
          integer, intent(in) :: m
-         real, dimension(m), intent(inout) :: a,b,c
-         real, dimension(m), intent(inout) :: f
+         real(kind=kind_c3), dimension(m), intent(inout) :: a,b,c
+         real(kind=kind_c3), dimension(m), intent(inout) :: f
          !--locals
-         real, dimension(m) :: q
+         real(kind=kind_c3), dimension(m) :: q
          integer :: k
-         real :: p
+         real(kind=kind_c3) :: p
 
          c(m)=0.
          q(1)=-c(1)/b(1)
@@ -9414,7 +9421,7 @@ module module_cu_c3
          !Variables (input, output, inout)
          integer, intent(in)    :: i_in, k_in
          
-         real, intent(in) :: f_in
+         real(kind=kind_c3), intent(in) :: f_in
          
          character(len=*), intent(in) :: name1
          character(len=*), intent(in) :: name2
@@ -9436,18 +9443,18 @@ module module_cu_c3
          !Parameters:
          character(len=*), parameter :: procedureName = 'wrtBinCtl' ! Subroutine Name
 
-         real, parameter :: p_undef = -9.99e33
+         real(kind=kind_c3), parameter :: p_undef = -9.99e33
       
          !Variables (input, output, inout)
          integer, intent(in):: n, mzp, ntimes
 
-         real, intent(in) :: p2d(:)
+         real(kind=kind_c3), intent(in) :: p2d(:)
 
          character(len=*), intent(in) :: cumulus
          
          !Local variables:
          integer:: nvartotal, klevgrads(200), jk, int_byte_size, nvar, maxklevgrads
-         real   :: real_byte_size
+         real(kind=kind_c3)   :: real_byte_size
          integer :: nrec, rec_size
 
          nrec = 0
@@ -9528,8 +9535,8 @@ module module_cu_c3
       subroutine gen_random(its,ite,use_random_num,random)
          implicit none
          integer, intent(in)  :: its,ite
-         real,    intent(in)  :: use_random_num
-         real,    intent(out) :: random(:)
+         real(kind=kind_c3),    intent(in)  :: use_random_num
+         real(kind=kind_c3),    intent(out) :: random(:)
 
          !-local vars
          integer   :: i
@@ -9608,9 +9615,9 @@ module module_cu_c3
       !---------------------------------------------------------------------------------------------------
       subroutine calc_lcl(t0,pp0,r0,tlcl,plcl,dzlcl)
          implicit none
-         real,intent(in ) :: t0,pp0,r0
-         real,intent(out) :: tlcl,plcl,dzlcl
-         real :: ttd
+         real(kind=kind_c3),intent(in ) :: t0,pp0,r0
+         real(kind=kind_c3),intent(out) :: tlcl,plcl,dzlcl
+         real(kind=kind_c3) :: ttd
 
          ttd=td(pp0,r0)
          tlcl=ttd-(0.001296*ttd+0.1963)*(t0-ttd)
@@ -9620,9 +9627,9 @@ module module_cu_c3
       
       end subroutine calc_lcl
       !---------------------------------------------------------------------------------------------------
-      real function td(p,rs)
+      real(kind=kind_c3) function td(p,rs)
          implicit none
-         real :: rr,rs,es,esln,p
+         real(kind=kind_c3) :: rr,rs,es,esln,p
          rr=rs+1e-8
          es=p*rr/(.622+rr)
          esln=log(es)
@@ -9639,8 +9646,8 @@ module module_cu_c3
          logical, intent (inout)                     :: ave_from_surface
          integer, intent (in)                        :: its,ite
          character*(*), intent (out), dimension(:)   :: ierrc
-         real          ,intent (in ), dimension(:)   :: xland       
-         real          ,intent (out), dimension(:)   ::   &       
+         real(kind=kind_c3)          ,intent (in ), dimension(:)   :: xland       
+         real(kind=kind_c3)          ,intent (out), dimension(:)   ::   &       
             xland1,& 
             aa0   ,& 
             aa1   ,& 
@@ -9711,8 +9718,8 @@ module module_cu_c3
                          ,hcot,xf_ens,pr_ens,evap_bcb,uc,vc,hc,hco,zuo,zdo,zenv)
          implicit none       
          integer  ,intent (in )                   :: kts,kte,its,ite
-         real     ,intent (in ), dimension(:,:)   ::   zo   
-         real     ,intent (out), dimension(:,:)   ::   & 
+         real(kind=kind_c3)     ,intent (in ), dimension(:,:)   ::   zo   
+         real(kind=kind_c3)     ,intent (out), dimension(:,:)   ::   & 
               z     ,&
               xz    ,&
               hcdo  ,&
@@ -9756,35 +9763,35 @@ module module_cu_c3
       integer         ,intent (in) :: itf,ktf,its,ite, kts,kte
       !
       integer, dimension (:)  ,intent (in   ) :: ktop,kbcon,klcl
-      real,                    intent(in    ) :: min_entr_rate
-      real,    dimension (:)  ,intent (in   ) :: x_add_buoy,zqexec
-      real,    dimension (:,:),intent (in   ) :: us,vs,zo,po,qo,po_cup
+      real(kind=kind_c3),                    intent(in    ) :: min_entr_rate
+      real(kind=kind_c3),    dimension (:)  ,intent (in   ) :: x_add_buoy,zqexec
+      real(kind=kind_c3),    dimension (:,:),intent (in   ) :: us,vs,zo,po,qo,po_cup
 
       integer, dimension (:)  ,intent (inout) :: ierr
-      real,    dimension (:)  ,intent (inout) :: entr_rate,precip_rescaled
-      real,    dimension (:)  ,intent (out  ) :: vshear,var2d2
+      real(kind=kind_c3),    dimension (:)  ,intent (inout) :: entr_rate,precip_rescaled
+      real(kind=kind_c3),    dimension (:)  ,intent (out  ) :: vshear,var2d2
 
       !- local var
       !- levels for shear calculation
       integer, parameter :: k975  = 3       ! approx surface level
-      real,    parameter :: p650  = 650., & ! upper level of shear calculation
+      real(kind=kind_c3),    parameter :: p650  = 650., & ! upper level of shear calculation
                             width =  10., & !30., & ! how fast the entr will change larger=> slower (m/s)
                             turnw =  8.    ! shear where the changing of entr starts (m/s)
-      real,    parameter :: xexp  = 2.
-      real,    parameter :: alpha = 0.12
-      real,    parameter :: beta  = 0.32
-      real,    parameter :: H0    = 11.0
-      real,    parameter :: Pmin = 17.0
-      real,    parameter :: Pmax = 27.0
-      real,    parameter :: rmin=12.0,rmax=33.0,xc=15.0,yc=50.0,alpha2=0.2,beta2=0.2
-      real,    parameter :: p850  = 850.  ! lower level of shear calculation
+      real(kind=kind_c3),    parameter :: xexp  = 2.
+      real(kind=kind_c3),    parameter :: alpha = 0.12
+      real(kind=kind_c3),    parameter :: beta  = 0.32
+      real(kind=kind_c3),    parameter :: H0    = 11.0
+      real(kind=kind_c3),    parameter :: Pmin = 17.0
+      real(kind=kind_c3),    parameter :: Pmax = 27.0
+      real(kind=kind_c3),    parameter :: rmin=12.0,rmax=33.0,xc=15.0,yc=50.0,alpha2=0.2,beta2=0.2
+      real(kind=kind_c3),    parameter :: p850  = 850.  ! lower level of shear calculation
 
       ! use_shear_ctrl_entr == 1
-      real,    parameter :: center = 12.0, width2 = 20.0, sharpness = 1.0
+      real(kind=kind_c3),    parameter :: center = 12.0, width2 = 20.0, sharpness = 1.0
 
       integer :: i,k,k650,k850
-      real    :: u650, u975, v650, v975, H, u850,sigx,sigy,x,y,dp
-      real,    dimension (its:itf) :: scale_factor,w_col
+      real(kind=kind_c3)    :: u650, u975, v650, v975, H, u850,sigx,sigy,x,y,dp
+      real(kind=kind_c3),    dimension (its:itf) :: scale_factor,w_col
       
       !scale_factor = 1.0
       if( use_shear_ctrl_entr < 3 ) then
@@ -9878,16 +9885,16 @@ module module_cu_c3
       character*(*)   ,intent (in)                 :: cumulus
       character(len=*),intent(inout), dimension(:) :: ierrc
       integer, intent(in ) :: itf,ktf,its,ite,kts,kte
-      real,    intent(in ) :: dtime,ave_layer
-      real,    dimension (:,:),intent(in)     :: po,t,q,z,zo,tn_adv,qo_adv,us,vs,up_massentro &
+      real(kind=kind_c3),    intent(in ) :: dtime,ave_layer
+      real(kind=kind_c3),    dimension (:,:),intent(in)     :: po,t,q,z,zo,tn_adv,qo_adv,us,vs,up_massentro &
                                                 ,up_massdetro,zuo,cnvcf
-      real,    dimension (:)  ,intent(in)     :: psur,z1,xland,tsur
+      real(kind=kind_c3),    dimension (:)  ,intent(in)     :: psur,z1,xland,tsur
       integer, dimension (:)  ,intent(in)     :: start_level,ktop,k22,klcl,kbcon
       integer, dimension(:)   ,intent(inout)  :: ierr,ierr_31
-      real,    dimension(:)   ,intent(inout)  :: daa_adv_dt
+      real(kind=kind_c3),    dimension(:)   ,intent(inout)  :: daa_adv_dt
       !---local var
-      real, dimension (its:ite)         :: aa_tmp,aa0,aa1_adv,hkbo_adv,zqexec,ztexec,x_add_buoy
-      real, dimension (kts:kte,its:ite) ::                                            &
+      real(kind=kind_c3), dimension (its:ite)         :: aa_tmp,aa0,aa1_adv,hkbo_adv,zqexec,ztexec,x_add_buoy
+      real(kind=kind_c3), dimension (kts:kte,its:ite) ::                                            &
           qeso_adv,heo_adv,heso_adv,qeso_cup_adv,qo_cup_adv,heo_cup_adv,heso_cup_adv  &
          ,gammao_cup_adv,tn_cup_adv,zo_cup_adv,po_cup_adv,dbyo_adv,hco_adv,tn_x,qo_x  &
          ,u_cup,v_cup
@@ -9942,10 +9949,10 @@ module module_cu_c3
                implicit none
                character*(*), intent (in)         :: cumulus
                integer, intent(in ), dimension(:) :: ktop, kbcon
-               real,    intent(in ), dimension(:) :: dx, vvel1d
-               real,    intent(in ), dimension(:,:) :: zo_cup
-               real,    intent(out), dimension(:) :: wmean,tau_ecmwf
-               real :: alpha_cats, dx_ref = 125.e+3 ! meters
+               real(kind=kind_c3),    intent(in ), dimension(:) :: dx, vvel1d
+               real(kind=kind_c3),    intent(in ), dimension(:,:) :: zo_cup
+               real(kind=kind_c3),    intent(out), dimension(:) :: wmean,tau_ecmwf
+               real(kind=kind_c3) :: alpha_cats, dx_ref = 125.e+3 ! meters
                integer :: i, vtp_index
                !--- time-scale of cape removal
                !
@@ -9999,18 +10006,18 @@ module module_cu_c3
           character*(*), intent (in)              :: cumulus
           integer      , intent (in)              :: itf,ktf,its,ite, kts,kte
           integer, dimension (:)   ,intent (in  ) :: klcl,kbcon,ktop,kpbl
-          real,    dimension (:,:) ,intent (in  ) :: zo_cup,t,tn,q,qo,po_cup,us,vs
-          real                     ,intent (in  ) :: dtime, t_star
-          real,    dimension (:)   ,intent (in  ) :: xland,aa1,tau_ecmwf,z1,x_add_buoy
+          real(kind=kind_c3),    dimension (:,:) ,intent (in  ) :: zo_cup,t,tn,q,qo,po_cup,us,vs
+          real(kind=kind_c3)                     ,intent (in  ) :: dtime, t_star
+          real(kind=kind_c3),    dimension (:)   ,intent (in  ) :: xland,aa1,tau_ecmwf,z1,x_add_buoy
           !
           ! input and output
           character*(*), dimension(:) ,intent(inout) :: ierrc
           integer,       dimension(:) ,intent(inout) :: ierr,ierr_24
-          real,          dimension(:) ,intent(out  ) :: aa1_bl,tau_bl
+          real(kind=kind_c3),          dimension(:) ,intent(out  ) :: aa1_bl,tau_bl
           !
           !  local variables in this routine
           integer                               ::    i,k,vtp_index
-          real                                  ::    dz,da,umean
+          real(kind=kind_c3)                                  ::    dz,da,umean
           !
           !--- diurnal cycle section
           !
@@ -10057,14 +10064,14 @@ module module_cu_c3
 
       end subroutine dicycle_closure_trigger 
 !---------------------------------------------------------------------------------------------!
-      real function allev_initial(itimestep,dt)
+      real(kind=kind_c3) function allev_initial(itimestep,dt)
         implicit none
-        real,    parameter  :: sharpness = 1
-        real    ,parameter  :: maxseconds=86400.
+        real(kind=kind_c3),    parameter  :: sharpness = 1
+        real(kind=kind_c3)    ,parameter  :: maxseconds=86400.
         integer ,intent(in) :: itimestep
-        real    ,intent(in) :: dt
+        real(kind=kind_c3)    ,intent(in) :: dt
         integer :: max_timesteps
-        real    :: width2 
+        real(kind=kind_c3)    :: width2 
         max_timesteps = nint(maxseconds/dt)
         width2        = real(max_timesteps/6)
         allev_initial = 0.5 * (1.0 + tanh(sharpness * (itimestep - (2*max_timesteps/3) ) / width2))
